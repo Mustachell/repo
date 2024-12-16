@@ -1,0 +1,59 @@
+{% extends "./base.html" %}
+
+{% block title %} Gestion de personas{% endblock %}
+
+{% block body %}
+<div class="row">
+   <div class="col-sm-12 col-md-6 col-lg-4 col-xl-4">
+     <h2>Gestión de Personas</h2>   
+     <div class="card">
+         <div class="card-body">
+            <form action="/registrarPersona/" method="POST">{% csrf_token %}
+                <div class="form-group">
+                    <input type="text" id="numID" name="numID" class="form-control" placeholder="ID"
+                      minlength="1" maxlength ="100" min="1" required>
+                </div>    
+                <div class="form-group">
+                    <input type="text" id="txtNombre" name="txtNombre" class="form-control" placeholder="Nombre"
+                      maxlength ="50" required>
+                </div>    
+                <div class="form-group">
+                    <input type="text" id="txtApellidos" name="txtApellidos" class="form-control" placeholder="Apellidos"
+                      maxlength ="50" required>
+                </div> 
+                <div class="form-group">
+                   <button type"submit" class="btn btn-success btn-block text-white">Guardar</button>        
+                </div>    
+            </form>
+         </div>
+     </div>      
+   </div>
+   <div class="col-sm-12 col-md-6 col-lg-8 col-xl-8">
+        <h1>Listado de personas</h1> 
+        <div class="table-responsive py-2">
+            <table class="table table-striped">
+               <thead>
+                   <tr>
+                       <th>Contador(ID)</th>
+                       <th>"Genero"</th>
+                       <th>Nombre</th>
+                       <th>Apellidos</th>
+                       <th colspan="2">Opciones</th>
+                   </tr>
+              </thead>
+              <tbody>
+                {% for p in personas%}
+                <tr>
+                  <td>{{forloop.counter}}</td> 
+                  <td>{{p.id}}</td>
+                  <td>{{p.nombre}}</td>
+                  <td>{{p.apellidos}}</td>
+                  <td><a href="edicionPersona/{{p.id}}" class="btn btn-info">Editar</a></td>
+                  <td><a href="eliminacionPersona/{{p.id}}" class="btn btn-danger">Eliminar</a></td>
+                </tr>
+                {% endfor %}
+              </tbody>    
+         </table>   
+   </div>
+</div>
+{% endblock %}
