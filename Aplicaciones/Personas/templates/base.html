@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en>"
+<html lang="en">
 
 <head>
     {% load static %}
@@ -11,10 +11,57 @@
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="{% static 'css/gestionPersona.css' %}">
 
+    <style>
+        body {
+            background-color: #f4f7fb; /* Fondo gris claro */
+        }
+
+        .navbar {
+            background-color: #6a0dad; /* Morado */
+        }
+
+        .navbar-brand {
+            color: #ffcc00; /* Amarillo */
+        }
+
+        .navbar-nav .nav-link {
+            color: #ffcc00; /* Amarillo */
+        }
+
+        .navbar-nav .nav-link:hover {
+            color: #fff; /* Blanco cuando pasa el ratón */
+        }
+
+        .btn-primary {
+            background-color: #ffcc00; /* Amarillo para botones */
+            border-color: #ffcc00;
+        }
+
+        .btn-primary:hover {
+            background-color: #e6b800; /* Amarillo más oscuro al hacer hover */
+            border-color: #e6b800;
+        }
+
+        table {
+            background-color: #ffffff; /* Blanco para las tablas */
+            border-radius: 8px; /* Bordes redondeados */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+        }
+
+        th, td {
+            padding: 15px; /* Mejorar la apariencia de las celdas */
+        }
+
+        th {
+            background-color: #6a0dad; /* Morado para las cabeceras */
+            color: #fff;
+        }
+    </style>
+
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navnar-light bg-info">
+    <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container-fluid">
           <a class="navbar-brand" href="#">Personas :D</a>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,9 +83,9 @@
         {% block body %}
 
         {% endblock %}
-      </div> 
+      </div>
  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
-<body>
+</body>
 
-</html>    
+</html>

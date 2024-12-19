@@ -8,12 +8,13 @@ def home(request):
     return render(request, "gestionPersonas.html", {"personas": personasLista})
 
 def registrarPersona(request):
-    id = request.POST['numID']
-    nombre = request.POST['txtNombre']
-    apellidos = request.POST['txtApellidos']
-    
-    persona = Personas.objects.create(id=id, nombre=nombre, apellidos=apellidos)
+    nombre = request.POST.get('txtNombre')
+    apellidos = request.POST.get('txtApellidos')
+
+    # Elimina 'id' de la creación de persona, Django lo generará automáticamente
+    persona = Personas.objects.create(nombre=nombre, apellidos=apellidos)
     return redirect('/')
+
 
 def edicionPersona(request, id):
     persona =Personas.objects.get(id=id)

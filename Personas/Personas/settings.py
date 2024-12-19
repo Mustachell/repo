@@ -75,10 +75,15 @@ WSGI_APPLICATION = 'Personas.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'server',
+        'USER': 'postgres',
+        'PASSWORD': '123',
+        'HOST': 'db',  # Nombre del servicio de PostgreSQL en docker-compose.yml
+        'PORT': '5432',
     }
 }
+
 
 
 # Password validation

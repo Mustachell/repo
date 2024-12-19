@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'Aplicaciones.Personas'
+    'Aplicaciones.Personas',
+    'Proyecto'
 ]
 
 MIDDLEWARE = [
@@ -76,8 +77,12 @@ WSGI_APPLICATION = 'Proyecto.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'Personas.db'
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'server',
+        'USER': 'postgres',
+        'PASSWORD': '123',
+        'HOST': 'db',  # Nombre del servicio de PostgreSQL en docker-compose.yml
+        'PORT': '5432',
     }
 }
 
