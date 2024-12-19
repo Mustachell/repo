@@ -1,5 +1,65 @@
-th, 
-td{
+/* Fondo morado claro para toda la página */
+body {
+    background-color: #E1BEE7; /* Morado claro */
+}
+
+/* Fondo amarillo suave para el contenedor */
+.container {
+    background-color: #FFEB3B; /* Amarillo suave */
+    border-radius: 10px; /* Bordes redondeados */
+    padding: 20px;
+}
+
+/* Personalización de la tabla */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #D1C4E9; /* Morado claro */
+    border: 2px solid #7B1FA2; /* Bordes morados */
+}
+
+th, td {
+    padding: 12px 15px;
     text-align: center;
     vertical-align: middle;
+    border: 1px solid #7B1FA2; /* Bordes morados en celdas */
+}
+
+/* Cabecera de la tabla */
+th {
+    background-color: #7B1FA2; /* Morado para la cabecera */
+    color: white; /* Texto blanco en la cabecera */
+}
+
+/* Estilo de las celdas alternadas */
+tr:nth-child(even) {
+    background-color: #f80bf8; /* Gris claro en las filas pares */
+}
+
+tr:nth-child(odd) {
+    background-color: #e71a9c; /* Fondo blanco para filas impares */
+}
+
+/* Estilo para los botones dentro de la tabla */
+.btn {
+    background-color: #7B1FA2; /* Botones morados */
+    color: white; /* Texto blanco en los botones */
+}
+
+.btn:hover {
+    background-color: #9C27B0; /* Botón más claro al pasar el mouse */
+}
+
+/* Personalización de la barra de navegación con fondo morado */
+.navbar {
+    background-color: #7B1FA2; /* Morado para la barra de navegación */
+}
+
+/* Estilo para los enlaces de la barra de navegación */
+.navbar-light .navbar-nav .nav-link {
+    color: white; /* Texto blanco en los enlaces */
+}
+
+.navbar-light .navbar-nav .nav-link:hover {
+    color: #FFEB3B; /* Amarillo al pasar el mouse */
 }
