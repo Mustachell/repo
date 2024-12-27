@@ -1,0 +1,103 @@
+{% extends "./base.html" %}
+
+{% block title %}Listado de Animales{% endblock %}
+
+{% block body %}
+<div class="row">
+    <div class="col-sm-12">
+        <!-- Mostrar mensajes de éxito o error si existen -->
+        {% if messages %}
+        <div id="message-alert">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-purple alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="col-sm-12 col-md-6 col-lg-4 col-xl-4">
+    <h2>Gestador de Animales</h2>
+    <div class="card">
+        <div class="card-body">
+            <form action="/registrarAnimal/" method="POST">{% csrf_token %}
+                <div class="form-group">
+                    <input type="text" id="txtEspecie" name="txtEspecie" class="form-control" placeholder="Especie"
+                        maxlength="50" required>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="txtMantenedor" name="txtMantenedor" class="form-control"
+                        placeholder="Mantenedor" maxlength="50" required>
+                </div>
+                <div class="form-group">
+                    <input type="number" id="numEdad" name="numEdad" class="form-control" placeholder="Edad"
+                     required>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-success btn-block text-white">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="row">
+    <div class="col-sm-12">
+        <h2>Listado de Animales</h2>
+        <div class="table-responsive py-2">
+            <table class="table table-striped text-center">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Especie</th>
+                        <th>Edad</th>
+                        <th>Mantenedor/a</th>
+                        <th colspan="2">Opciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for animal in animales %}
+                    <tr>
+                        <td>{{ animal.id }}</td>
+                        <td>{{ animal.especie }}</td>
+                        <td>{{ animal.edad }}</td>
+                        <td>{{ animal.mantenedor }}</td>
+                        <td><a href="edicionAnimal/{{ animal.id }}" class="btn btn-info">Editar</a></td>
+                        <td><a href="eliminacionAnimal/{{ animal.id }}" class="btn btn-danger"
+                        onclick="return confirmDelete();">Eliminar</a></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4">No se encontraron animales.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // Función de confirmación antes de eliminar
+    function confirmDelete() {
+        return confirm("¿Estás seguro de que deseas eliminar esta persona?");
+    }
+  </script>
+  
+  <script>
+  // Ocultar los mensajes después de 10 segundos
+  setTimeout(function() {
+      var alert = document.getElementById('message-alert');
+      if (alert) {
+          alert.style.display = 'none';
+      }
+  }, 5000);  // 10 segundos
+  </script>
+  
+  {% endblock %}

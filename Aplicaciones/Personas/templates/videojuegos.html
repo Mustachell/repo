@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Videojuegos{% endblock %}
+
+{% block body %}
+<!-- Añadimos el bloque de mensajes aquí -->
+{% if messages %}
+<div class="row">
+    <div class="col-12">
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-sm-12 col-md-6 col-lg-4 col-xl-4">
+        <h2>Registro de Videojuegos</h2>
+        <div class="card">
+            <div class="card-body">
+                <form action="{% url 'registrarVideojuego' %}" method="POST">{% csrf_token %}
+                    <div class="form-group">
+                        <input type="text" id="txtNombre" name="txtNombre" class="form-control" placeholder="Nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="numPrecio" name="numPrecio" class="form-control" placeholder="Precio en CLP" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="txtConsola" name="txtConsola" class="form-control" placeholder="Consola" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="numCantidad" name="numCantidad" class="form-control" placeholder="Cantidad disponible" required>
+                    </div>
+                    <div class="form-group">
+                        <select id="selDisponibilidad" name="selDisponibilidad" class="form-control" required>
+                            <option value="tienda">Disponible en Tienda</option>
+                            <option value="envio">Solo Envío</option>
+                            <option value="ambos">Tienda y Envío</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-success btn-block">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-12 col-md-6 col-lg-8 col-xl-8">
+        <h2>Lista de Videojuegos</h2>
+        <div class="table-responsive py-2">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nombre</th>
+                        <th>Precio</th>
+                        <th>Consola</th>
+                        <th>Cantidad</th>
+                        <th>Disponibilidad</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in videojuegos %}
+                    <tr>
+                        <td>{{forloop.counter}}</td>
+                        <td>{{v.nombre}}</td>
+                        <td>${{v.precio|stringformat:"d"|intcomma}}</td>
+                        <td>{{v.consola}}</td>
+                        <td>{{v.cantidad}}</td>
+                        <td>{{v.get_disponibilidad_display}}</td>
+                        <td>
+                            <a href="{% url 'edicionVideojuego' v.id %}" class="btn btn-info">Editar</a>
+                            <a href="{% url 'eliminacionVideojuego' v.id %}" class="btn btn-danger btnEliminacion">Eliminar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    // Hacer que los mensajes de alerta desaparezcan después de 5 segundos
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            var alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                var bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+    });
+</script>
+{% endblock %} 

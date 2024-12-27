@@ -1,21 +1,46 @@
 {% extends "./base.html" %}
 
-{% block title %} Gestión de personas{% endblock %}
+{% block title %} Gestión de personas {% endblock %}
 
 {% block body %}
 <div class="row">
+    <div class="col-sm-12">
+        <!-- Mostrar mensajes de éxito o error -->
+        {% if messages %}
+        <div id="message-alert">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-purple alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
     <div class="col-sm-12 col-md-6 col-lg-4 col-xl-4">
-        <h2>Gestión de Personas</h2>   
+        <h2>Gestión de Personas</h2>
         <div class="card">
             <div class="card-body">
                 <form action="/registrarPersona/" method="POST">{% csrf_token %}
                     <div class="form-group">
                         <input type="text" id="txtNombre" name="txtNombre" class="form-control" placeholder="Nombre"
-                               maxlength="50" required>
+                            maxlength="50" required>
                     </div>
                     <div class="form-group">
                         <input type="text" id="txtApellidos" name="txtApellidos" class="form-control"
-                               placeholder="Apellidos" maxlength="50" required>
+                            placeholder="Apellidos" maxlength="50" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="numEdad" name="numEdad" class="form-control" placeholder="Edad"
+                         required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" id="txtEmail" name="txtEmail" class="form-control" 
+                               placeholder="Email" maxlength="50" required 
+                               pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
                     </div>
                     <div class="form-group">
                         <button type="submit" class="btn btn-success btn-block text-white">Guardar</button>
@@ -27,6 +52,16 @@
 
     <div class="col-sm-12 col-md-6 col-lg-8 col-xl-8">
         <h1>Listado de Personas</h1>
+        <div class="form-group mb-3">
+            <label for="entriesSelect">Mostrar entradas:</label>
+            <select id="entriesSelect" class="form-select" style="width: auto; display: inline-block; margin-left: 10px;">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+        </div>
         <div class="table-responsive py-2">
             <table class="table table-striped text-center">
                 <thead>
@@ -34,17 +69,22 @@
                         <th>"ID"</th>
                         <th>Nombre</th>
                         <th>Apellidos</th>
+                        <th>Edad</th>
+                        <th>Email</th>
                         <th colspan="2">Opciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for p in personas %}
-                    <tr>
+                    <tr class="persona-row">
                         <td>{{ forloop.counter }}</td>
                         <td>{{ p.nombre }}</td>
                         <td>{{ p.apellidos }}</td>
+                        <td>{{ p.edad }}</td>
+                        <td>{{ p.email }}</td>
                         <td><a href="edicionPersona/{{ p.id }}" class="btn btn-info">Editar</a></td>
-                        <td><a href="eliminacionPersona/{{ p.id }}" class="btn btn-danger">Eliminar</a></td>
+                        <td><a href="eliminacionPersona/{{ p.id }}" class="btn btn-danger"
+                        onclick="return confirmDelete();">Eliminar</a></td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -52,4 +92,49 @@
         </div>
     </div>
 </div>
+
+<script>
+  // Función de confirmación antes de eliminar
+  function confirmDelete() {
+      return confirm("¿Estás seguro de que deseas eliminar esta persona?");
+  }
+</script>
+
+<script>
+// Ocultar los mensajes después de 10 segundos
+setTimeout(function() {
+    var alert = document.getElementById('message-alert');
+    if (alert) {
+        alert.style.display = 'none';
+    }
+}, 5000);  // 5 segundos
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const entriesSelect = document.getElementById('entriesSelect');
+    const rows = document.querySelectorAll('.persona-row');
+    
+    function updateVisibleRows() {
+        const selectedValue = entriesSelect.value;
+        const maxRows = selectedValue === 'all' ? rows.length : parseInt(selectedValue);
+        
+        rows.forEach((row, index) => {
+            if (index < maxRows) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+    // Inicializar con 5 entradas
+    entriesSelect.value = '5';
+    updateVisibleRows();
+    
+    // Actualizar cuando cambie la selección
+    entriesSelect.addEventListener('change', updateVisibleRows);
+});
+</script>
+
 {% endblock %}

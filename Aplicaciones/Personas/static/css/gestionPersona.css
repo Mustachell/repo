@@ -1,65 +1,77 @@
-/* Fondo morado claro para toda la página */
+/* Fondo con imagen de Microplay */
 body {
-    background-color: #E1BEE7; /* Morado claro */
+    background: url('../img/microplay-bg.jpg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    background-color: rgba(128, 128, 128, 0.9) !important; /* Fondo gris semi-transparente como fallback */
 }
 
-/* Fondo amarillo suave para el contenedor */
+/* Hacer el contenedor semi-transparente para que se vea el fondo */
 .container {
-    background-color: #FFEB3B; /* Amarillo suave */
-    border-radius: 10px; /* Bordes redondeados */
+    background-color: rgba(255, 206, 12, 0.9) !important; /* #FFCE0C con 90% de opacidad */
+    border-radius: 10px;
     padding: 20px;
+    backdrop-filter: blur(5px); /* Efecto de desenfoque detrás del contenedor */
+    margin-top: 20px;
+    margin-bottom: 20px;
 }
 
 /* Personalización de la tabla */
 table {
-    width: 100%;
-    border-collapse: collapse;
-    background-color: #D1C4E9; /* Morado claro */
-    border: 2px solid #7B1FA2; /* Bordes morados */
+    width: 100% !important;
+    border-collapse: collapse !important;
+    background-color: #F5F5F5 !important; /* Fondo gris suave para la tabla */
+    border: 2px solid #505050 !important; /* Bordes gris oscuro */
 }
 
 th, td {
-    padding: 12px 15px;
-    text-align: center;
-    vertical-align: middle;
-    border: 1px solid #7B1FA2; /* Bordes morados en celdas */
+    padding: 12px 15px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    border: 1px solid #505050 !important; /* Bordes gris oscuro en celdas */
 }
 
 /* Cabecera de la tabla */
 th {
-    background-color: #7B1FA2; /* Morado para la cabecera */
-    color: white; /* Texto blanco en la cabecera */
+    background-color: #404040 !important; /* Gris oscuro para la cabecera */
+    color: white !important; /* Texto blanco en la cabecera */
 }
 
 /* Estilo de las celdas alternadas */
 tr:nth-child(even) {
-    background-color: #f80bf8; /* Gris claro en las filas pares */
+    background-color: #E0E0E0 !important; /* Gris claro en las filas pares */
 }
 
 tr:nth-child(odd) {
-    background-color: #e71a9c; /* Fondo blanco para filas impares */
+    background-color: #D0D0D0 !important; /* Gris un poco más oscuro en las filas impares */
 }
 
-/* Estilo para los botones dentro de la tabla */
+/* Estilo para los botones */
 .btn {
-    background-color: #7B1FA2; /* Botones morados */
-    color: white; /* Texto blanco en los botones */
+    background-color: #505050 !important; /* Color gris oscuro para los botones */
+    color: white !important; /* Texto blanco */
 }
 
 .btn:hover {
-    background-color: #9C27B0; /* Botón más claro al pasar el mouse */
+    background-color: #707070 !important; /* Botón gris más claro al pasar el mouse */
 }
 
-/* Personalización de la barra de navegación con fondo morado */
+/* Barra de navegación personalizada */
 .navbar {
-    background-color: #7B1FA2; /* Morado para la barra de navegación */
+    background-color: rgba(33, 37, 41, 0.9) !important;
+    backdrop-filter: blur(5px);
 }
 
-/* Estilo para los enlaces de la barra de navegación */
+/* Estilo para los enlaces en la barra de navegación */
 .navbar-light .navbar-nav .nav-link {
-    color: white; /* Texto blanco en los enlaces */
+    color: white !important; /* Texto blanco en los enlaces */
 }
 
 .navbar-light .navbar-nav .nav-link:hover {
-    color: #FFEB3B; /* Amarillo al pasar el mouse */
+    color: #FFCE0C !important; /* Cambiado de #FFEB3B a #FFCE0C */
+}
+
+/* Estilo para los alertas con el amarillo */
+.alert-yellow {
+    background-color: #FFCE0C !important; /* Cambiado de #FFEB3B a #FFCE0C */
+    color: black !important; /* Texto negro para mayor contraste */
 }

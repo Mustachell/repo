@@ -1,0 +1,71 @@
+/* Fondo azul oscuro para toda la página */
+body {
+    background-color: #003366 !important; /* Azul oscuro */
+}
+
+/* Fondo amarillo suave para el contenedor */
+.container {
+    background-color: #FFEB3B !important; /* Amarillo suave (CityLab) */
+    border-radius: 10px; /* Bordes redondeados */
+    padding: 20px;
+}
+
+/* Personalización de la tabla */
+table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    background-color: #F5F5F5 !important; /* Fondo gris suave para la tabla */
+    border: 2px solid #003366 !important; /* Bordes azul oscuro */
+}
+
+th, td {
+    padding: 12px 15px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    border: 1px solid #003366 !important; /* Bordes azul oscuro en celdas */
+}
+
+/* Cabecera de la tabla */
+th {
+    background-color: #003366 !important; /* Azul oscuro para la cabecera */
+    color: white !important; /* Texto blanco en la cabecera */
+}
+
+/* Estilo de las celdas alternadas */
+tr:nth-child(even) {
+    background-color: #F0F0F0 !important; /* Gris claro en las filas pares */
+}
+
+tr:nth-child(odd) {
+    background-color: #E0E0E0 !important; /* Gris un poco más oscuro en las filas impares */
+}
+
+/* Estilo para los botones */
+.btn {
+    background-color: #003366 !important; /* Color azul oscuro para los botones */
+    color: white !important; /* Texto blanco */
+}
+
+.btn:hover {
+    background-color: #00539C !important; /* Botón azul más claro al pasar el mouse */
+}
+
+/* Barra de navegación personalizada */
+.navbar {
+    background-color: #003366 !important; /* Color azul oscuro para la barra de navegación */
+}
+
+/* Estilo para los enlaces en la barra de navegación */
+.navbar-light .navbar-nav .nav-link {
+    color: white !important; /* Texto blanco en los enlaces */
+}
+
+.navbar-light .navbar-nav .nav-link:hover {
+    color: #FFEB3B !important; /* Amarillo al pasar el mouse */
+}
+
+/* Estilo para los alertas con el amarillo */
+.alert-yellow {
+    background-color: #FFEB3B !important; /* Amarillo suave para alertas */
+    color: black !important; /* Texto negro para mayor contraste */
+}

@@ -25,7 +25,13 @@ SECRET_KEY = 'django-insecure-)_(6mfed_wb0puwu=r4^9#_c0!*s*@(w9u_*3q!8sou$lgn5a!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '192.168.0.8',
+    '192.168.0.8:8000',
+    'localhost',
+    '127.0.0.1',
+    '0.0.0.0'
+]
 
 
 # Application definition
@@ -37,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'Aplicaciones.Personas',
     'Proyecto'
 ]
@@ -83,6 +90,14 @@ DATABASES = {
         'PASSWORD': '123',
         'HOST': 'db',  # Nombre del servicio de PostgreSQL en docker-compose.yml
         'PORT': '5432',
+    },
+        'db2': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'Test',
+        'USER': 'postgres',
+        'PASSWORD': '123',
+        'HOST': 'db2',  # Nombre del segundo contenedor
+        'PORT': '5432',
     }
 }
 
@@ -121,6 +136,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

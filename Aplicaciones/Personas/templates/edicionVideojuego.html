@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Videojuego{% endblock %}
+
+{% block body %}
+<div class="row">
+    <div class="col-md-4 offset-md-4">
+        <h2>Edición de Videojuego</h2>
+        <div class="card">
+            <div class="card-body">
+                <form action="{% url 'editarVideojuego' %}" method="POST">{% csrf_token %}
+                    <div class="form-group">
+                        <input type="hidden" name="numID" value="{{videojuego.id}}">
+                        <input type="text" id="txtNombre" name="txtNombre" class="form-control" placeholder="Nombre" required value="{{videojuego.nombre}}">
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="numPrecio" name="numPrecio" class="form-control" placeholder="Precio en CLP" required value="{{videojuego.precio}}">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="txtConsola" name="txtConsola" class="form-control" placeholder="Consola" required value="{{videojuego.consola}}">
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="numCantidad" name="numCantidad" class="form-control" placeholder="Cantidad disponible" required value="{{videojuego.cantidad}}">
+                    </div>
+                    <div class="form-group">
+                        <select id="selDisponibilidad" name="selDisponibilidad" class="form-control" required>
+                            <option value="tienda" {% if videojuego.disponibilidad == 'tienda' %}selected{% endif %}>Disponible en Tienda</option>
+                            <option value="envio" {% if videojuego.disponibilidad == 'envio' %}selected{% endif %}>Solo Envío</option>
+                            <option value="ambos" {% if videojuego.disponibilidad == 'ambos' %}selected{% endif %}>Tienda y Envío</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-success btn-block">Guardar</button>
+                        <a href="{% url 'videojuegos' %}" class="btn btn-secondary btn-block">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
