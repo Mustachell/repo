@@ -1,0 +1,30 @@
+/* Heredar estilos base */
+@import 'gestionPersona.css';
+
+/* Sobreescribir el fondo del contenedor específicamente para videojuegos */
+.container {
+    background: url('../img/videojuego.jpg') no-repeat center center !important;
+    background-size: cover !important;
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+}
+
+/* Mantener la capa semi-transparente amarilla */
+.container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 206, 12, 0.9) !important;
+    border-radius: 10px;
+    z-index: 0;
+}
+
+/* Asegurar que el contenido esté por encima del fondo */
+.container > * {
+    position: relative;
+    z-index: 1;
+} 

@@ -38,4 +38,23 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cantidadInput = document.getElementById('numCantidad');
+    const disponibilidadSelect = document.getElementById('selDisponibilidad');
+
+    cantidadInput.addEventListener('change', function() {
+        if (parseInt(this.value) === 0) {
+            disponibilidadSelect.value = 'sin_stock';
+            disponibilidadSelect.disabled = true;
+        } else {
+            disponibilidadSelect.disabled = false;
+            if (disponibilidadSelect.value === 'sin_stock') {
+                disponibilidadSelect.value = 'ambos';
+            }
+        }
+    });
+});
+</script>
 {% endblock %} 

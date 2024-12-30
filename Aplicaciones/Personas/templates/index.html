@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Bienvenido a Gestor Ly{% endblock %}
+
+{% block body %}
+<div class="container py-5">
+    <div class="row mb-4 text-center">
+        <div class="col-12">
+            <h1 class="display-4">Bienvenido a Gestor Ly</h1>
+            <p class="lead">Sistema de gestión integrado para múltiples recursos</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center g-4">
+        <!-- Tarjeta para Personas -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h3 class="card-title">Gestión de Personas</h3>
+                    <p class="card-text">Administra la información de personas en el sistema.</p>
+                    <a href="{% url 'home' %}" class="btn btn-primary">Ir a Gestor de Personas</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjeta para Animales -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h3 class="card-title">Gestión de Animales</h3>
+                    <p class="card-text">Administra el registro de animales.</p>
+                    <a href="{% url 'animales' %}" class="btn btn-primary">Ir a Gestor de Animales</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjeta para Videojuegos -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h3 class="card-title">Gestión de Videojuegos</h3>
+                    <p class="card-text">Administra el inventario de videojuegos.</p>
+                    <a href="{% url 'videojuegos' %}" class="btn btn-primary">Ir a Gestor de Videojuegos</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

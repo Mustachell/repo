@@ -28,7 +28,7 @@ def registrarPersona(request):
     # Validación del email
     if '@' not in email:
         messages.error(request, 'El email debe contener un @')
-        return redirect('/')
+        return redirect('home')  # Redirige a la página de personas
 
     persona = Personas.objects.create(
         nombre=nombre,
@@ -37,7 +37,7 @@ def registrarPersona(request):
         email=email
     )
     messages.success(request, '¡Persona registrada!')
-    return redirect('/')
+    return redirect('home')  # Cambiado de '/' a 'home'
 
 def registrarAnimal(request):
     especie = request.POST.get('txtEspecie')
@@ -79,7 +79,7 @@ def editarPersona(request):
     persona.save()
 
     messages.success(request, '¡Persona actualizada!')
-    return redirect('/')
+    return redirect('home')  # Cambiado de '/' a 'home'
 
 def editarAnimal(request):
     id = request.POST['numID']
@@ -98,14 +98,11 @@ def editarAnimal(request):
     
     return redirect("animales")
 
-def eliminarPersona(request, id):
+def eliminacionPersona(request, id):
     persona = Personas.objects.get(id=id)
     persona.delete()
-
-    # Añadir mensaje de éxito
-    messages.success(request, 'Persona eliminada exitosamente.')
-    
-    return redirect("/")
+    messages.success(request, '¡Persona eliminada!')
+    return redirect('home')  # Cambiado de '/' a 'home'
 
 def eliminarAnimal(request, id):
     animal = Animal.objects.get(id=id)
@@ -123,12 +120,14 @@ def listar_videojuegos(request):
     return render(request, 'videojuegos.html', {'videojuegos': videojuegos})
 
 def registrarVideojuego(request):
-    nombre = request.POST.get('txtNombre')
-    precio = int(request.POST.get('numPrecio', 0))  # Convertir a entero
-    consola = request.POST.get('txtConsola')
-    cantidad = int(request.POST.get('numCantidad', 0))  # Convertir a entero
-    disponibilidad = request.POST.get('selDisponibilidad')
-
+    nombre = request.POST['txtNombre']
+    precio = request.POST['numPrecio']
+    consola = request.POST['txtConsola']
+    cantidad = int(request.POST['numCantidad'])
+    
+    # Determinar disponibilidad basado en la cantidad
+    disponibilidad = 'sin_stock' if cantidad == 0 else 'ambos'
+    
     videojuego = Videojuego.objects.create(
         nombre=nombre,
         precio=precio,
@@ -136,8 +135,7 @@ def registrarVideojuego(request):
         cantidad=cantidad,
         disponibilidad=disponibilidad
     )
-
-    messages.success(request, 'Videojuego añadido exitosamente.')
+    messages.success(request, '¡Videojuego registrado!')
     return redirect('videojuegos')
 
 def edicionVideojuego(request, id):
@@ -147,11 +145,17 @@ def edicionVideojuego(request, id):
 def editarVideojuego(request):
     id = request.POST['numID']
     nombre = request.POST['txtNombre']
-    precio = int(request.POST['numPrecio'])  # Convertir a entero
+    precio = request.POST['numPrecio']
     consola = request.POST['txtConsola']
-    cantidad = int(request.POST['numCantidad'])  # Convertir a entero
-    disponibilidad = request.POST['selDisponibilidad']
-    
+    cantidad = int(request.POST['numCantidad'])
+    disponibilidad = request.POST.get('selDisponibilidad', 'ambos')  # Valor por defecto 'ambos'
+
+    # Si la cantidad es 0, forzar sin_stock
+    if cantidad == 0:
+        disponibilidad = 'sin_stock'
+    elif cantidad > 0 and disponibilidad == 'sin_stock':
+        disponibilidad = 'ambos'
+
     videojuego = Videojuego.objects.get(id=id)
     videojuego.nombre = nombre
     videojuego.precio = precio
@@ -160,8 +164,8 @@ def editarVideojuego(request):
     videojuego.disponibilidad = disponibilidad
     videojuego.save()
 
-    messages.success(request, "El videojuego ha sido editado con éxito.")
-    return redirect("videojuegos")
+    messages.success(request, '¡Videojuego actualizado!')
+    return redirect('videojuegos')
 
 def eliminarVideojuego(request, id):
     videojuego = Videojuego.objects.get(id=id)
@@ -169,3 +173,6 @@ def eliminarVideojuego(request, id):
 
     messages.success(request, 'Videojuego eliminado exitosamente.')
     return redirect("videojuegos")
+
+def index(request):
+    return render(request, 'index.html')

@@ -1,18 +1,48 @@
-/* Fondo con imagen de Microplay */
+/* Fondo gris oscuro para toda la página */
 body {
-    background: url('../img/microplay-bg.jpg') no-repeat center center fixed !important;
-    background-size: cover !important;
-    background-color: rgba(128, 128, 128, 0.9) !important; /* Fondo gris semi-transparente como fallback */
+    background-color: #808080 !important;
 }
 
-/* Hacer el contenedor semi-transparente para que se vea el fondo */
+/* Estilo para la barra de navegación */
+.navbar {
+    background-color: #333333 !important; /* Gris oscuro */
+}
+
+/* Estilo para el enlace de inicio */
+.navbar-brand {
+    color: #D3D3D3 !important; /* Gris claro */
+}
+
+.navbar-brand:hover {
+    color: #FFFFFF !important; /* Blanco al pasar el mouse */
+}
+
+/* Contenedor con fondo de imagen */
 .container {
-    background-color: rgba(255, 206, 12, 0.9) !important; /* #FFCE0C con 90% de opacidad */
+    background: url('../img/gestion.jpg') no-repeat center center !important;
+    background-size: cover !important;
     border-radius: 10px;
     padding: 20px;
-    backdrop-filter: blur(5px); /* Efecto de desenfoque detrás del contenedor */
-    margin-top: 20px;
-    margin-bottom: 20px;
+    position: relative;
+}
+
+/* Capa semi-transparente amarilla sobre la imagen */
+.container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 206, 12, 0.9) !important; /* #FFCE0C con 90% de opacidad */
+    border-radius: 10px;
+    z-index: 0;
+}
+
+/* Asegurar que el contenido esté por encima del fondo */
+.container > * {
+    position: relative;
+    z-index: 1;
 }
 
 /* Personalización de la tabla */

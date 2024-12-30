@@ -5,7 +5,7 @@
 {% block body %}
 <div class="row">
     <div class="col-sm-12">
-        <!-- Mostrar mensajes de éxito o error si existen -->
+        <!-- Mensajes de alerta -->
         {% if messages %}
         <div id="message-alert">
             {% for message in messages %}
@@ -19,36 +19,46 @@
     </div>
 </div>
 
-<div class="col-sm-12 col-md-6 col-lg-4 col-xl-4">
-    <h2>Gestador de Animales</h2>
-    <div class="card">
-        <div class="card-body">
-            <form action="/registrarAnimal/" method="POST">{% csrf_token %}
-                <div class="form-group">
-                    <input type="text" id="txtEspecie" name="txtEspecie" class="form-control" placeholder="Especie"
-                        maxlength="50" required>
-                </div>
-                <div class="form-group">
-                    <input type="text" id="txtMantenedor" name="txtMantenedor" class="form-control"
-                        placeholder="Mantenedor" maxlength="50" required>
-                </div>
-                <div class="form-group">
-                    <input type="number" id="numEdad" name="numEdad" class="form-control" placeholder="Edad"
-                     required>
-                </div>
-                <div class="form-group">
-                    <button type="submit" class="btn btn-success btn-block text-white">Guardar</button>
-                </div>
-            </form>
+<div class="row align-items-start">
+    <div class="col-sm-12 col-md-6 col-lg-4 col-xl-4">
+        <h2>Gestador de Animales</h2>
+        <div class="card">
+            <div class="card-body">
+                <form action="/registrarAnimal/" method="POST">{% csrf_token %}
+                    <div class="form-group">
+                        <input type="text" id="txtEspecie" name="txtEspecie" class="form-control" placeholder="Especie"
+                            maxlength="50" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="txtMantenedor" name="txtMantenedor" class="form-control"
+                            placeholder="Mantenedor" maxlength="50" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="numEdad" name="numEdad" class="form-control" placeholder="Edad"
+                         required>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-success btn-block text-white">Guardar</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
-
-
-<div class="row">
-    <div class="col-sm-12">
-        <h2>Listado de Animales</h2>
+    <div class="col-sm-12 col-md-6 col-lg-8 col-xl-8">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 class="mb-0">Listado de Animales</h1>
+            <div class="form-group mb-0">
+                <label for="entriesSelect" class="me-2">Mostrar:</label>
+                <select id="entriesSelect" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+        </div>
         <div class="table-responsive py-2">
             <table class="table table-striped text-center">
                 <thead>
@@ -61,14 +71,14 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for animal in animales %}
-                    <tr>
-                        <td>{{ animal.id }}</td>
-                        <td>{{ animal.especie }}</td>
-                        <td>{{ animal.edad }}</td>
-                        <td>{{ animal.mantenedor }}</td>
-                        <td><a href="edicionAnimal/{{ animal.id }}" class="btn btn-info">Editar</a></td>
-                        <td><a href="eliminacionAnimal/{{ animal.id }}" class="btn btn-danger"
+                    {% for a in animales %}
+                    <tr class="animal-row">
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ a.especie }}</td>
+                        <td>{{ a.edad }}</td>
+                        <td>{{ a.mantenedor }}</td>
+                        <td><a href="edicionAnimal/{{ a.id }}" class="btn btn-info">Editar</a></td>
+                        <td><a href="eliminacionAnimal/{{ a.id }}" class="btn btn-danger"
                         onclick="return confirmDelete();">Eliminar</a></td>
                     </tr>
                     {% empty %}
@@ -99,5 +109,32 @@
       }
   }, 5000);  // 10 segundos
   </script>
+  
+  <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const entriesSelect = document.getElementById('entriesSelect');
+    const rows = document.querySelectorAll('.animal-row');
+    
+    function updateVisibleRows() {
+        const selectedValue = entriesSelect.value;
+        const maxRows = selectedValue === 'all' ? rows.length : parseInt(selectedValue);
+        
+        rows.forEach((row, index) => {
+            if (index < maxRows) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+    // Inicializar con 5 entradas
+    entriesSelect.value = '5';
+    updateVisibleRows();
+    
+    // Actualizar cuando cambie la selección
+    entriesSelect.addEventListener('change', updateVisibleRows);
+});
+</script>
   
   {% endblock %}

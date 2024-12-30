@@ -27,14 +27,19 @@ class Videojuego(models.Model):
         ('tienda', 'Disponible en Tienda'),
         ('envio', 'Solo Envío'),
         ('ambos', 'Tienda y Envío'),
+        ('sin_stock', 'Sin Stock'),
     ]
 
     id = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=100)
-    precio = models.IntegerField()  # Cambiado a IntegerField para CLP sin decimales
+    precio = models.IntegerField()
     consola = models.CharField(max_length=50)
     cantidad = models.IntegerField(default=0)
-    disponibilidad = models.CharField(max_length=10, choices=DISPONIBILIDAD_CHOICES, default='ambos')
+    disponibilidad = models.CharField(
+        max_length=10, 
+        choices=DISPONIBILIDAD_CHOICES, 
+        default='ambos'
+    )
 
     def __str__(self):
-        return f"{self.nombre} - {self.consola} (${self.precio:,})"  # Formato con separador de miles
+        return f"{self.nombre} - {self.consola}"
