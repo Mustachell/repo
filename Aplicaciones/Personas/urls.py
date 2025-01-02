@@ -1,16 +1,15 @@
 from django.urls import path
 from . import views
 
-    
 urlpatterns = [
-    path('', views.index, name='index'),  # Nueva ruta para la página de inicio
-    path('personas/', views.home, name='home'),  # Ruta para el listado de personas
+    path('', views.index, name='index'),
+    path('personas/', views.home, name='home'),
     path('registrarPersona/', views.registrarPersona, name='registrarPersona'),
     path('edicionPersona/<id>', views.edicionPersona, name='edicionPersona'),
     path('editarPersona/', views.editarPersona, name='editarPersona'),
     path('eliminacionPersona/<id>', views.eliminacionPersona, name='eliminacionPersona'),
 
-    path('animales/', views.listar_animales, name='animales'),  # Ruta para animales
+    path('animales/', views.listar_animales, name='animales'),
     path('registrarAnimal/', views.registrarAnimal, name='registrarAnimal'),
     path('animales/edicionAnimal/<id>/', views.edicionAnimal, name='edicionAnimal'),
     path('editarAnimal/', views.editarAnimal, name='editarAnimal'),
@@ -21,6 +20,9 @@ urlpatterns = [
     path('videojuegos/edicionVideojuego/<id>/', views.edicionVideojuego, name='edicionVideojuego'),
     path('editarVideojuego/', views.editarVideojuego, name='editarVideojuego'),
     path('videojuegos/eliminacionVideojuego/<id>', views.eliminarVideojuego, name='eliminacionVideojuego'),
+
+    path('importar/', views.importar_datos_txt, name='importar_personas'),
+    path('ver-datos/', views.ver_datos_importados, name='ver_datos_importados'),
 ]
 
     

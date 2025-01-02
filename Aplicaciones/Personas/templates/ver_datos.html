@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% load data_filters %}
+
+{% block title %}Datos Importados{% endblock %}
+
+{% block body %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Datos Importados: {{ tabla_nombre }}</h4>
+            <div class="d-flex align-items-center gap-3">
+                <a href="{% url 'importar_personas' %}" class="btn btn-light btn-sm">
+                    Importar Nuevos Datos
+                </a>
+                <div class="d-flex align-items-center">
+                    <label class="text-white me-2">Mostrar:</label>
+                    <select class="form-select form-select-sm" id="itemsPerPage" style="width: auto;">
+                        <option value="5" {% if items_por_pagina == '5' %}selected{% endif %}>5</option>
+                        <option value="10" {% if items_por_pagina == '10' %}selected{% endif %}>10</option>
+                        <option value="25" {% if items_por_pagina == '25' %}selected{% endif %}>25</option>
+                        <option value="50" {% if items_por_pagina == '50' %}selected{% endif %}>50</option>
+                        <option value="100" {% if items_por_pagina == '100' %}selected{% endif %}>100</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if datos %}
+            <!-- Buscador -->
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <div class="d-flex gap-2">
+                        <select id="columnaSelect" class="form-select" style="width: auto;">
+                            <option value="">Todas las columnas</option>
+                            {% for columna in columnas %}
+                                <option value="{{ columna }}">{{ columna }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="text" id="searchInput" class="form-control" placeholder="Buscar..." style="width: auto;">
+                        <button type="button" class="btn btn-secondary" onclick="resetSearch()">Limpiar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de datos -->
+            <div class="table-responsive" style="max-width: 100%; overflow-x: auto;">
+                <table class="table table-striped" style="white-space: nowrap;">
+                    <thead>
+                        <tr>
+                            {% for columna in columnas %}
+                                <th>{{ columna }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fila in datos %}
+                            <tr>
+                                {% for columna in columnas %}
+                                    <td>
+                                        {% with valor=fila|get_item:columna %}
+                                            {% if valor|stringformat:"s"|matches_coordinates %}
+                                                <a href="#map" class="coordenada-link" 
+                                                   data-coords="{{ valor|stringformat:"s"|trim }}">{{ valor }}</a>
+                                            {% else %}
+                                                {{ valor }}
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if datos.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?pagina=1&items={{ items_por_pagina }}">&laquo; Primera</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?pagina={{ datos.previous_page_number }}&items={{ items_por_pagina }}">Anterior</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ datos.number }} de {{ datos.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if datos.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?pagina={{ datos.next_page_number }}&items={{ items_por_pagina }}">Siguiente</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?pagina={{ datos.paginator.num_pages }}&items={{ items_por_pagina }}">Última &raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+
+            <!-- Mapa -->
+            <div id="map-section" style="display: none;">
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Ubicación en Mapa</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="map" style="height: 400px; width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaflet CSS y JS -->
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+            <script>
+            let map;
+            let marker;
+            let mapInitialized = false;
+
+            function initMap() {
+                if (!mapInitialized) {
+                    map = L.map('map').setView([-36.8094955, -73.0674156], 13);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(map);
+                    mapInitialized = true;
+                }
+            }
+
+            function showLocation(coords) {
+                document.getElementById('map-section').style.display = 'block';
+                if (!mapInitialized) {
+                    initMap();
+                }
+
+                const [lat, lng] = coords.split(',').map(coord => parseFloat(coord.trim()));
+                
+                if (marker) {
+                    marker.setLatLng([lat, lng]);
+                } else {
+                    marker = L.marker([lat, lng]).addTo(map);
+                }
+
+                map.setView([lat, lng], 15);
+                marker.bindPopup(`Ubicación: ${coords}`).openPopup();
+                
+                // Asegurar que el mapa se renderice correctamente
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 100);
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const coordLinks = document.querySelectorAll('.coordenada-link');
+                if (coordLinks.length > 0) {
+                    document.getElementById('map-section').style.display = 'block';
+                    initMap();
+                }
+
+                coordLinks.forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const coords = this.getAttribute('data-coords');
+                        showLocation(coords);
+                    });
+                });
+            });
+
+            function resetSearch() {
+                document.getElementById('searchInput').value = '';
+                document.getElementById('columnaSelect').value = '';
+                filterTable();
+            }
+
+            function filterTable() {
+                const searchText = document.getElementById('searchInput').value.toLowerCase();
+                const selectedColumn = document.getElementById('columnaSelect').value;
+                const rows = document.querySelectorAll('table tbody tr');
+
+                rows.forEach(row => {
+                    const cells = row.getElementsByTagName('td');
+                    let found = false;
+
+                    Array.from(cells).forEach((cell, index) => {
+                        if (!selectedColumn || columnas[index] === selectedColumn) {
+                            if (cell.textContent.toLowerCase().includes(searchText)) {
+                                found = true;
+                            }
+                        }
+                    });
+
+                    row.style.display = found ? '' : 'none';
+                });
+            }
+
+            // Agregar funcionalidad para cambiar items por página
+            document.getElementById('itemsPerPage').addEventListener('change', function() {
+                const items = this.value;
+                window.location.href = updateQueryStringParameter(window.location.href, 'items', items);
+            });
+
+            // Función auxiliar para actualizar parámetros URL
+            function updateQueryStringParameter(uri, key, value) {
+                const re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+                const separator = uri.indexOf('?') !== -1 ? "&" : "?";
+                
+                if (uri.match(re)) {
+                    return uri.replace(re, '$1' + key + "=" + value + '$2');
+                } else {
+                    return uri + separator + key + "=" + value;
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const searchInput = document.getElementById('searchInput');
+                const columnaSelect = document.getElementById('columnaSelect');
+                
+                searchInput.addEventListener('input', filterTable);
+                columnaSelect.addEventListener('change', filterTable);
+            });
+
+            const columnas = [{% for columna in columnas %}'{{ columna }}',{% endfor %}];
+            </script>
+
+            <style>
+            .coordenada-link {
+                color: #007bff;
+                text-decoration: none;
+                cursor: pointer;
+            }
+
+            .coordenada-link:hover {
+                text-decoration: underline;
+            }
+            </style>
+        {% else %}
+            <div class="alert alert-info d-flex justify-content-between align-items-center">
+                <span>No hay datos para mostrar</span>
+                {% if columna_actual or busqueda_actual %}
+                    <a href="?items={{ items_por_pagina }}" class="btn btn-primary btn-sm">Volver a la lista completa</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

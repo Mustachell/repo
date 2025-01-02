@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Importar Datos{% endblock %}
+
+{% block body %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">Importar Datos desde Archivo</h4>
+    </div>
+    <div class="card-body">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="file" class="form-label">Seleccionar archivo:</label>
+                <input type="file" class="form-control" id="file" name="file" 
+                       accept=".csv,.txt,.xls,.xlsx" required>
+                <div class="form-text">
+                    Formatos soportados:
+                    <ul class="mb-0">
+                        <li>CSV (separado por coma, punto y coma o pipe '|')</li>
+                        <li>Excel (.xls, .xlsx)</li>
+                        <li>Texto (.txt separado por '|')</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">
+                    Importar Datos
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

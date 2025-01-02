@@ -1,6 +1,36 @@
-{% extends 'base.html' %}
+{% extends "./base.html" %}
+{% load static %}
 
-{% block title %}Editar Videojuego{% endblock %}
+{% block title %}Edición de Videojuego{% endblock %}
+
+{% block css %}
+<style>
+    .container {
+        background: url('{% static "img/videojuego.jpg" %}') no-repeat center center !important;
+        background-size: cover !important;
+        border-radius: 10px;
+        padding: 20px;
+        position: relative;
+    }
+
+    .container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 206, 12, 0.9) !important;
+        border-radius: 10px;
+        z-index: 0;
+    }
+
+    .container > * {
+        position: relative;
+        z-index: 1;
+    }
+</style>
+{% endblock %}
 
 {% block body %}
 <div class="row">
@@ -8,53 +38,47 @@
         <h2>Edición de Videojuego</h2>
         <div class="card">
             <div class="card-body">
-                <form action="{% url 'editarVideojuego' %}" method="POST">{% csrf_token %}
+                <form action="/editarVideojuego/" method="POST">{% csrf_token %}
                     <div class="form-group">
-                        <input type="hidden" name="numID" value="{{videojuego.id}}">
-                        <input type="text" id="txtNombre" name="txtNombre" class="form-control" placeholder="Nombre" required value="{{videojuego.nombre}}">
+                        <input type="text" id="txtNombre" name="txtNombre" 
+                               value="{{ videojuego.nombre }}" class="form-control" 
+                               placeholder="Nombre" required>
                     </div>
                     <div class="form-group">
-                        <input type="number" id="numPrecio" name="numPrecio" class="form-control" placeholder="Precio en CLP" required value="{{videojuego.precio}}">
+                        <input type="number" id="numPrecio" name="numPrecio" 
+                               value="{{ videojuego.precio|stringformat:'g' }}" class="form-control" 
+                               placeholder="Precio en CLP" required>
                     </div>
                     <div class="form-group">
-                        <input type="text" id="txtConsola" name="txtConsola" class="form-control" placeholder="Consola" required value="{{videojuego.consola}}">
+                        <input type="text" id="txtConsola" name="txtConsola" 
+                               value="{{ videojuego.consola }}" class="form-control" 
+                               placeholder="Consola" required>
                     </div>
                     <div class="form-group">
-                        <input type="number" id="numCantidad" name="numCantidad" class="form-control" placeholder="Cantidad disponible" required value="{{videojuego.cantidad}}">
+                        <input type="number" id="numCantidad" name="numCantidad" 
+                               value="{{ videojuego.cantidad }}" class="form-control" 
+                               placeholder="Cantidad" required>
                     </div>
                     <div class="form-group">
-                        <select id="selDisponibilidad" name="selDisponibilidad" class="form-control" required>
-                            <option value="tienda" {% if videojuego.disponibilidad == 'tienda' %}selected{% endif %}>Disponible en Tienda</option>
-                            <option value="envio" {% if videojuego.disponibilidad == 'envio' %}selected{% endif %}>Solo Envío</option>
+                        <select id="selDisponibilidad" name="selDisponibilidad" class="form-select" required>
                             <option value="ambos" {% if videojuego.disponibilidad == 'ambos' %}selected{% endif %}>Tienda y Envío</option>
+                            <option value="sin_stock" {% if videojuego.disponibilidad == 'sin_stock' %}selected{% endif %}>Sin Stock</option>
+                            <option value="tienda" {% if videojuego.disponibilidad == 'tienda' %}selected{% endif %}>Disponible en tienda</option>
+                            <option value="envio" {% if videojuego.disponibilidad == 'envio' %}selected{% endif %}>Solo envío</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <button type="submit" class="btn btn-success btn-block">Guardar</button>
-                        <a href="{% url 'videojuegos' %}" class="btn btn-secondary btn-block">Cancelar</a>
+                        <input type="hidden" name="numID" value="{{ videojuego.id }}">
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success">Guardar</button>
+                            <a href="/videojuegos" class="btn btn-danger">Cancelar</a>
+                        </div>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const cantidadInput = document.getElementById('numCantidad');
-    const disponibilidadSelect = document.getElementById('selDisponibilidad');
-
-    cantidadInput.addEventListener('change', function() {
-        if (parseInt(this.value) === 0) {
-            disponibilidadSelect.value = 'sin_stock';
-            disponibilidadSelect.disabled = true;
-        } else {
-            disponibilidadSelect.disabled = false;
-            if (disponibilidadSelect.value === 'sin_stock') {
-                disponibilidadSelect.value = 'ambos';
-            }
-        }
-    });
-});
-</script>
-{% endblock %} 
+{% block boton_volver %}{% endblock %} 

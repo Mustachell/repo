@@ -1,6 +1,36 @@
 {% extends "./base.html" %}
+{% load static %}
 
-{% block title %} Gestión de personas {% endblock %}
+{% block title %}Gestión de personas{% endblock %}
+
+{% block css %}
+<style>
+    .container {
+        background: url('{% static "img/personas.jpg" %}') no-repeat center center !important;
+        background-size: cover !important;
+        border-radius: 10px;
+        padding: 20px;
+        position: relative;
+    }
+
+    .container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 206, 12, 0.9) !important;
+        border-radius: 10px;
+        z-index: 0;
+    }
+
+    .container > * {
+        position: relative;
+        z-index: 1;
+    }
+</style>
+{% endblock %}
 
 {% block body %}
 <div class="row">
@@ -24,7 +54,7 @@
         <h2>Gestión de Personas</h2>
         <div class="card">
             <div class="card-body">
-                <form action="/registrarPersona/" method="POST">{% csrf_token %}
+                <form action="{% url 'registrarPersona' %}" method="POST">{% csrf_token %}
                     <div class="form-group">
                         <input type="text" id="txtNombre" name="txtNombre" class="form-control" placeholder="Nombre"
                             maxlength="50" required>
@@ -51,16 +81,27 @@
     </div>
 
     <div class="col-sm-12 col-md-6 col-lg-8 col-xl-8">
-        <h1>Listado de Personas</h1>
-        <div class="form-group mb-3">
-            <label for="entriesSelect">Mostrar entradas:</label>
-            <select id="entriesSelect" class="form-select" style="width: auto; display: inline-block; margin-left: 10px;">
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-            </select>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 class="mb-0">Listado de Personas</h1>
+            <div class="input-group" style="width: 300px;">
+                <select id="searchColumn" class="form-select flex-grow-0" style="width: auto;">
+                    <option value="2">Nombre</option>
+                    <option value="3">Apellidos</option>
+                    <option value="4">Edad</option>
+                    <option value="5">Email</option>
+                </select>
+                <input type="text" id="searchInput" class="form-control" placeholder="Buscar...">
+            </div>
+            <div class="form-group mb-0">
+                <label for="entriesSelect" class="me-2">Mostrar:</label>
+                <select id="entriesSelect" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
         </div>
         <div class="table-responsive py-2">
             <table class="table table-striped text-center">
@@ -82,13 +123,24 @@
                         <td>{{ p.apellidos }}</td>
                         <td>{{ p.edad }}</td>
                         <td>{{ p.email }}</td>
-                        <td><a href="edicionPersona/{{ p.id }}" class="btn btn-info">Editar</a></td>
-                        <td><a href="eliminacionPersona/{{ p.id }}" class="btn btn-danger"
+                        <td><a href="/edicionPersona/{{ p.id }}" class="btn btn-info">Editar</a></td>
+                        <td><a href="/eliminacionPersona/{{ p.id }}" class="btn btn-danger"
                         onclick="return confirmDelete();">Eliminar</a></td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+
+            <!-- Controles de paginación -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    Mostrando <span id="startIndex">1</span> a <span id="endIndex">5</span> de <span id="totalItems">{{ personas.count }}</span> registros
+                </div>
+                <div>
+                    <button id="prevPage" class="btn btn-secondary me-2" disabled>&laquo; Anterior</button>
+                    <button id="nextPage" class="btn btn-secondary">Siguiente &raquo;</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -114,26 +166,87 @@ setTimeout(function() {
 document.addEventListener('DOMContentLoaded', function() {
     const entriesSelect = document.getElementById('entriesSelect');
     const rows = document.querySelectorAll('.persona-row');
+    const prevButton = document.getElementById('prevPage');
+    const nextButton = document.getElementById('nextPage');
+    const startIndexSpan = document.getElementById('startIndex');
+    const endIndexSpan = document.getElementById('endIndex');
+    const totalItemsSpan = document.getElementById('totalItems');
     
-    function updateVisibleRows() {
-        const selectedValue = entriesSelect.value;
-        const maxRows = selectedValue === 'all' ? rows.length : parseInt(selectedValue);
+    let currentPage = 1;
+    let rowsPerPage = 5;
+    
+    function updatePagination() {
+        const totalRows = rows.length;
+        const totalPages = Math.ceil(totalRows / rowsPerPage);
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
         
+        // Actualizar la visibilidad de las filas
         rows.forEach((row, index) => {
-            if (index < maxRows) {
+            if (index >= startIndex && index < endIndex) {
                 row.style.display = '';
             } else {
                 row.style.display = 'none';
             }
         });
+        
+        // Actualizar botones de navegación
+        prevButton.disabled = currentPage === 1;
+        nextButton.disabled = currentPage === totalPages;
+        
+        // Actualizar texto informativo
+        startIndexSpan.textContent = startIndex + 1;
+        endIndexSpan.textContent = endIndex;
+        totalItemsSpan.textContent = totalRows;
     }
     
-    // Inicializar con 5 entradas
-    entriesSelect.value = '5';
-    updateVisibleRows();
+    // Manejar cambio en el número de entradas por página
+    entriesSelect.addEventListener('change', function() {
+        rowsPerPage = parseInt(this.value);
+        currentPage = 1;
+        updatePagination();
+    });
     
-    // Actualizar cuando cambie la selección
-    entriesSelect.addEventListener('change', updateVisibleRows);
+    // Manejar navegación
+    prevButton.addEventListener('click', function() {
+        if (currentPage > 1) {
+            currentPage--;
+            updatePagination();
+        }
+    });
+    
+    nextButton.addEventListener('click', function() {
+        const totalPages = Math.ceil(rows.length / rowsPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            updatePagination();
+        }
+    });
+    
+    // Inicializar
+    entriesSelect.value = '5';
+    updatePagination();
+});
+</script>
+
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    let searchText = this.value.toLowerCase();
+    let rows = document.getElementsByClassName('persona-row');
+    
+    for (let row of rows) {
+        let nombre = row.getElementsByTagName('td')[1].textContent.toLowerCase();
+        let apellidos = row.getElementsByTagName('td')[2].textContent.toLowerCase();
+        let email = row.getElementsByTagName('td')[4].textContent.toLowerCase();
+        
+        if (nombre.includes(searchText) || 
+            apellidos.includes(searchText) || 
+            email.includes(searchText)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    }
 });
 </script>
 

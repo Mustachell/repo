@@ -59,8 +59,15 @@
             <h1>Listado de Videojuegos</h1>
             <div class="d-flex align-items-center">
                 <div class="form-group me-3">
-                    <input type="text" id="searchConsola" class="form-control form-control-sm" 
-                           placeholder="Buscar por consola...">
+                    <select id="searchColumn" class="form-select form-select-sm me-2" style="width: auto; display: inline-block;">
+                        <option value="nombre">Nombre</option>
+                        <option value="precio">Precio</option>
+                        <option value="consola">Consola</option>
+                        <option value="cantidad">Cantidad</option>
+                        <option value="disponibilidad">Disponibilidad</option>
+                    </select>
+                    <input type="text" id="searchInput" class="form-control form-control-sm" 
+                           placeholder="Buscar...">
                 </div>
                 <div class="form-group mb-0">
                     <label for="entriesSelect" class="me-2">Mostrar:</label>
@@ -84,27 +91,46 @@
                         <th>Consola</th>
                         <th>Cantidad</th>
                         <th>Disponibilidad</th>
-                        <th>Acciones</th>
+                        <th colspan="2">Opciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for v in videojuegos %}
                     <tr class="videojuego-row">
-                        <td>{{forloop.counter}}</td>
-                        <td>{{v.nombre}}</td>
-                        <td>${{v.precio|stringformat:"d"|intcomma}}</td>
-                        <td>{{v.consola}}</td>
-                        <td>{{v.cantidad}}</td>
-                        <td>{{v.get_disponibilidad_display}}</td>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ v.nombre }}</td>
+                        <td>${{ v.precio|floatformat:0|intcomma }}</td>
+                        <td>{{ v.consola }}</td>
+                        <td>{{ v.cantidad }}</td>
                         <td>
-                            <a href="{% url 'edicionVideojuego' v.id %}" class="btn btn-info">Editar</a>
-                            <a href="{% url 'eliminacionVideojuego' v.id %}" class="btn btn-danger btnEliminacion" 
-                               onclick="return confirm('¿Estás seguro de que deseas eliminar este videojuego?');">Eliminar</a>
+                            {% if v.disponibilidad == 'ambos' %}
+                                Tienda y Envío
+                            {% elif v.disponibilidad == 'sin_stock' %}
+                                Sin Stock
+                            {% elif v.disponibilidad == 'tienda' %}
+                                Disponible en tienda
+                            {% elif v.disponibilidad == 'envio' %}
+                                Solo envío
+                            {% endif %}
                         </td>
+                        <td><a href="edicionVideojuego/{{ v.id }}" class="btn btn-info">Editar</a></td>
+                        <td><a href="eliminacionVideojuego/{{ v.id }}" class="btn btn-danger btnEliminacion" 
+                               onclick="return confirm('¿Estás seguro de que deseas eliminar este videojuego?');">Eliminar</a></td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+
+            <!-- Controles de paginación -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    Mostrando <span id="startIndex">1</span> a <span id="endIndex">5</span> de <span id="totalItems">{{ videojuegos.count }}</span> registros
+                </div>
+                <div>
+                    <button id="prevPage" class="btn btn-secondary me-2" disabled>&laquo; Anterior</button>
+                    <button id="nextPage" class="btn btn-secondary">Siguiente &raquo;</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -143,50 +169,102 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Script para búsqueda por consola
 document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('searchConsola');
+    const searchInput = document.getElementById('searchInput');
+    const searchColumn = document.getElementById('searchColumn');
     const rows = document.querySelectorAll('.videojuego-row');
+    const entriesSelect = document.getElementById('entriesSelect');
+    const prevButton = document.getElementById('prevPage');
+    const nextButton = document.getElementById('nextPage');
+    const startIndexSpan = document.getElementById('startIndex');
+    const endIndexSpan = document.getElementById('endIndex');
+    const totalItemsSpan = document.getElementById('totalItems');
+    
+    let currentPage = 1;
+    let rowsPerPage = 5;
+    
+    function normalizeText(text) {
+        return text.toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9\s]/g, '');
+    }
     
     function filterRows() {
-        const searchTerm = searchInput.value.toLowerCase();
+        const searchTerm = normalizeText(searchInput.value);
+        const selectedColumn = searchColumn.value;
         
         rows.forEach(row => {
-            const consolaCell = row.querySelector('td:nth-child(4)'); // La columna de consola
-            const consolaText = consolaCell.textContent.toLowerCase();
+            let cellIndex;
+            switch(selectedColumn) {
+                case 'nombre': cellIndex = 1; break;
+                case 'precio': cellIndex = 2; break;
+                case 'consola': cellIndex = 3; break;
+                case 'cantidad': cellIndex = 4; break;
+                case 'disponibilidad': cellIndex = 5; break;
+                default: cellIndex = 1;
+            }
             
-            if (consolaText.includes(searchTerm)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+            const cell = row.querySelector(`td:nth-child(${cellIndex + 1})`);
+            const cellText = normalizeText(cell.textContent);
+            
+            row.dataset.filtered = cellText.includes(searchTerm) ? 'true' : 'false';
         });
         
-        // Actualizar el contador de entradas visibles después de la búsqueda
-        updateVisibleRows();
+        currentPage = 1;
+        updatePagination();
     }
     
+    function updatePagination() {
+        const filteredRows = Array.from(rows).filter(row => row.dataset.filtered !== 'false');
+        const totalRows = filteredRows.length;
+        const totalPages = Math.ceil(totalRows / rowsPerPage);
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
+        
+        rows.forEach(row => row.style.display = 'none');
+        
+        filteredRows.slice(startIndex, endIndex).forEach(row => {
+            row.style.display = '';
+        });
+        
+        prevButton.disabled = currentPage === 1;
+        nextButton.disabled = currentPage === totalPages || totalRows === 0;
+        
+        startIndexSpan.textContent = totalRows === 0 ? 0 : startIndex + 1;
+        endIndexSpan.textContent = endIndex;
+        totalItemsSpan.textContent = totalRows;
+    }
+    
+    // Event Listeners
     searchInput.addEventListener('input', filterRows);
+    searchColumn.addEventListener('change', filterRows);
     
-    // Modificar la función updateVisibleRows para trabajar con la búsqueda
-    function updateVisibleRows() {
-        const selectedValue = parseInt(entriesSelect.value);
-        let visibleCount = 0;
-        
-        rows.forEach((row, index) => {
-            if (row.style.display !== 'none') {
-                if (visibleCount < selectedValue) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-                visibleCount++;
-            }
-        });
-    }
+    entriesSelect.addEventListener('change', function() {
+        rowsPerPage = parseInt(this.value);
+        currentPage = 1;
+        updatePagination();
+    });
     
-    const entriesSelect = document.getElementById('entriesSelect');
+    prevButton.addEventListener('click', function() {
+        if (currentPage > 1) {
+            currentPage--;
+            updatePagination();
+        }
+    });
+    
+    nextButton.addEventListener('click', function() {
+        const filteredRows = Array.from(rows).filter(row => row.dataset.filtered !== 'false');
+        const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            updatePagination();
+        }
+    });
+    
+    // Inicialización
+    rows.forEach(row => row.dataset.filtered = 'true');
     entriesSelect.value = '5';
-    updateVisibleRows();
-    entriesSelect.addEventListener('change', updateVisibleRows);
+    updatePagination();
 });
 
 document.addEventListener('DOMContentLoaded', function() {
