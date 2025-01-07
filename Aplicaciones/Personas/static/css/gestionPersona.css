@@ -34,7 +34,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(255, 206, 12, 0.9) !important; /* #FFCE0C con 90% de opacidad */
+    background-color: rgba(255, 206, 12, 0.9) !important;
     border-radius: 10px;
     z-index: 0;
 }
@@ -105,3 +105,16 @@ tr:nth-child(odd) {
     background-color: #FFCE0C !important; /* Cambiado de #FFEB3B a #FFCE0C */
     color: black !important; /* Texto negro para mayor contraste */
 }
+
+/* Logo CityLab en la esquina superior derecha */
+/* .container::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 150px;
+    height: 75px;
+    background: url('../img/citylabbiobio_logo.jpg') no-repeat center center;
+    background-size: contain;
+    z-index: 2;
+} */

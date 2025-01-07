@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Tablas Disponibles{% endblock %}
+
+{% block body %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Tablas Disponibles</h4>
+            <a href="{% url 'importar_personas' %}" class="btn btn-light btn-sm">
+                Importar Nueva Tabla
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="list-group">
+            {% for tabla in tablas %}
+                <a href="{% url 'ver_datos' tabla %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    {{ tabla|title }}
+                    <span class="badge bg-primary rounded-pill">Ver datos</span>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

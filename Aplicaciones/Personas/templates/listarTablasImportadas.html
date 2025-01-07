@@ -1,0 +1,44 @@
+{% extends "./base.html" %}
+
+{% block title %}Tablas Importadas{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="row">
+        {% for tipo, tablas in tablas_por_tipo.items %}
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">{{ tipo }}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nombre de la Tabla</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tabla in tablas %}
+                                <tr>
+                                    <td>{{ tabla }}</td>
+                                    <td>
+                                        <a href="{% url 'verDatosTabla' tabla %}" 
+                                           class="btn btn-primary btn-sm">
+                                            Ver Datos
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

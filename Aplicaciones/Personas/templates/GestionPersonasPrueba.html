@@ -1,7 +1,7 @@
 {% extends "./base.html" %}
 {% load static %}
 
-{% block title %}Gestión de personas{% endblock %}
+{% block title %}Gestión de Personas - Prueba{% endblock %}
 
 {% block css %}
 <style>
@@ -52,34 +52,7 @@
 <div class="row">
     <div class="col-sm-12 col-md-6 col-lg-4 col-xl-4">
         <h2>Gestión de Personas</h2>
-        <div class="card">
-            <div class="card-body">
-                <form action="{% url 'registrarPersona' %}" method="POST">{% csrf_token %}
-                    <div class="form-group">
-                        <input type="text" id="txtNombre" name="txtNombre" class="form-control" placeholder="Nombre"
-                            maxlength="50" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="text" id="txtApellidos" name="txtApellidos" class="form-control"
-                            placeholder="Apellidos" maxlength="50" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="number" id="numEdad" name="numEdad" class="form-control" placeholder="Edad"
-                         required>
-                    </div>
-                    <div class="form-group">
-                        <input type="email" id="txtEmail" name="txtEmail" class="form-control" 
-                               placeholder="Email" maxlength="50" required 
-                               pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
-                    </div>
-                    <div class="form-group">
-                        <button type="submit" class="btn btn-success btn-block text-white">Guardar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Nuevo filtro basado en columna -->
+        <!-- Filtro basado en columna -->
         <div class="form-group mt-3">
             <label for="filterColumn" class="me-2">Filtrar por columna:</label>
             <select id="filterColumn" class="form-select form-select-sm" style="width: auto; display: inline-block;">
@@ -104,10 +77,10 @@
                 </select>
                 <input type="text" id="searchInput" class="form-control" placeholder="Buscar...">
             </div>
-            <div class="form-group mb-4">
+            <div class="form-group mb-3">
                 <label for="entriesSelect" class="me-2">Mostrar:</label>
                 <select id="entriesSelect" class="form-select form-select-sm" style="width: auto; display: inline-block;">
-                    <option value="5">5</option>
+                    <option value="5" selected>5</option>
                     <option value="10">10</option>
                     <option value="25">25</option>
                     <option value="50">50</option>
@@ -139,9 +112,8 @@
                         <td>{{ p.apellidos }}</td>
                         <td>{{ p.edad }}</td>
                         <td>{{ p.email }}</td>
-                        <td><a href="/edicionPersona/{{ p.id }}" class="btn btn-info">Editar</a></td>
-                        <td><a href="/eliminacionPersona/{{ p.id }}" class="btn btn-danger"
-                        onclick="return confirmDelete();">Eliminar</a></td>
+                        <td><a href="/edicionPersona/{{ p.id }}?source=prueba" class="btn btn-info">Editar</a></td>
+                        <!-- Eliminar opción de eliminación -->
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -160,90 +132,6 @@
         </div>
     </div>
 </div>
-
-<script>
-  // Función de confirmación antes de eliminar
-  function confirmDelete() {
-      return confirm("¿Estás seguro de que deseas eliminar esta persona?");
-  }
-</script>
-
-<script>
-// Ocultar los mensajes después de 10 segundos
-setTimeout(function() {
-    var alert = document.getElementById('message-alert');
-    if (alert) {
-        alert.style.display = 'none';
-    }
-}, 5000);  // 5 segundos
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const entriesSelect = document.getElementById('entriesSelect');
-    const rows = document.querySelectorAll('.persona-row');
-    const prevButton = document.getElementById('prevPage');
-    const nextButton = document.getElementById('nextPage');
-    const startIndexSpan = document.getElementById('startIndex');
-    const endIndexSpan = document.getElementById('endIndex');
-    const totalItemsSpan = document.getElementById('totalItems');
-    
-    let currentPage = 1;
-    let rowsPerPage = 5;
-    
-    function updatePagination() {
-        const totalRows = rows.length;
-        const totalPages = Math.ceil(totalRows / rowsPerPage);
-        const startIndex = (currentPage - 1) * rowsPerPage;
-        const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
-        
-        // Actualizar la visibilidad de las filas
-        rows.forEach((row, index) => {
-            if (index >= startIndex && index < endIndex) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
-        
-        // Actualizar botones de navegación
-        prevButton.disabled = currentPage === 1;
-        nextButton.disabled = currentPage === totalPages;
-        
-        // Actualizar texto informativo
-        startIndexSpan.textContent = startIndex + 1;
-        endIndexSpan.textContent = endIndex;
-        totalItemsSpan.textContent = totalRows;
-    }
-    
-    // Manejar cambio en el número de entradas por página
-    entriesSelect.addEventListener('change', function() {
-        rowsPerPage = parseInt(this.value);
-        currentPage = 1;
-        updatePagination();
-    });
-    
-    // Manejar navegación
-    prevButton.addEventListener('click', function() {
-        if (currentPage > 1) {
-            currentPage--;
-            updatePagination();
-        }
-    });
-    
-    nextButton.addEventListener('click', function() {
-        const totalPages = Math.ceil(rows.length / rowsPerPage);
-        if (currentPage < totalPages) {
-            currentPage++;
-            updatePagination();
-        }
-    });
-    
-    // Inicializar
-    entriesSelect.value = '5';
-    updatePagination();
-});
-</script>
 
 <script>
 function applyFilters() {
@@ -327,4 +215,64 @@ document.getElementById('downloadAllButton').addEventListener('click', function(
 });
 </script>
 
-{% endblock %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('.persona-row');
+    const entriesSelect = document.getElementById('entriesSelect');
+    const prevButton = document.getElementById('prevPage');
+    const nextButton = document.getElementById('nextPage');
+    const startIndexSpan = document.getElementById('startIndex');
+    const endIndexSpan = document.getElementById('endIndex');
+    const totalItemsSpan = document.getElementById('totalItems');
+    
+    let currentPage = 1;
+    let rowsPerPage = parseInt(entriesSelect.value); // Inicializar con el valor seleccionado
+
+    function updatePagination() {
+        const totalRows = rows.length;
+        const totalPages = Math.ceil(totalRows / rowsPerPage);
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
+        
+        rows.forEach((row, index) => {
+            if (index >= startIndex && index < endIndex) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        prevButton.disabled = currentPage === 1;
+        nextButton.disabled = currentPage === totalPages;
+        
+        startIndexSpan.textContent = startIndex + 1;
+        endIndexSpan.textContent = endIndex;
+        totalItemsSpan.textContent = totalRows;
+    }
+    
+    entriesSelect.addEventListener('change', function() {
+        rowsPerPage = parseInt(this.value);
+        currentPage = 1;
+        updatePagination();
+    });
+    
+    prevButton.addEventListener('click', function() {
+        if (currentPage > 1) {
+            currentPage--;
+            updatePagination();
+        }
+    });
+    
+    nextButton.addEventListener('click', function() {
+        const totalPages = Math.ceil(rows.length / rowsPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            updatePagination();
+        }
+    });
+    
+    updatePagination(); // Llamar a la función para inicializar la paginación
+});
+</script>
+
+{% endblock %} 

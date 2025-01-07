@@ -16,13 +16,19 @@ urlpatterns = [
     path('animales/eliminacionAnimal/<id>', views.eliminarAnimal, name='eliminacionAnimal'),
     
     path('videojuegos/', views.listar_videojuegos, name='videojuegos'),
-    path('registrarVideojuego/', views.registrarVideojuego, name='registrarVideojuego'),
+    path('registrar/', views.registrar_videojuego, name='registrarVideojuego'),
     path('videojuegos/edicionVideojuego/<id>/', views.edicionVideojuego, name='edicionVideojuego'),
     path('editarVideojuego/', views.editarVideojuego, name='editarVideojuego'),
     path('videojuegos/eliminacionVideojuego/<id>', views.eliminarVideojuego, name='eliminacionVideojuego'),
 
     path('importar/', views.importar_datos_txt, name='importar_personas'),
     path('ver-datos/', views.ver_datos_importados, name='ver_datos_importados'),
+    
+    path('gestionPersonas/', views.gestion_personas, name='gestionPersonas'),
+    path('gestionPersonasPrueba/', views.gestion_personas_prueba, name='gestionPersonasPrueba'),
+    path('edicionPersona/<int:id>/', views.edicion_persona, name='edicionPersona'),
+    path('listarTablasImportadas/', views.listar_tablas_importadas, name='listarTablasImportadas'),
+    path('verDatosTabla/<str:nombre_tabla>/', views.ver_datos_tabla, name='verDatosTabla'),
 ]
 
     

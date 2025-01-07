@@ -46,11 +46,9 @@
         {% endif %}
         <div class="card">
             <div class="card-body">
-                <form action="{% url 'editarPersona' %}" method="POST">{% csrf_token %}
-                    <div class="form-group">
-                        <input type="text" id="numID" name="numID" value="{{persona.id}}" 
-                               class="form-control" placeholder="ID" readonly required>
-                    </div>
+                <form action="{% url 'edicionPersona' persona.id %}" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="source" value="{{ source }}">
                     <div class="form-group">
                         <input type="text" id="txtNombre" name="txtNombre" 
                                value="{{persona.nombre}}" class="form-control" 
@@ -76,7 +74,7 @@
                     <div class="form-group">
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-success">Guardar</button>
-                            <a href="{% url 'home' %}" class="btn btn-danger">Cancelar</a>
+                            <a href="{% if source == 'prueba' %}{% url 'gestionPersonasPrueba' %}{% else %}{% url 'gestionPersonas' %}{% endif %}" class="btn btn-danger">Cancelar</a>
                         </div>
                     </div>
                 </form>

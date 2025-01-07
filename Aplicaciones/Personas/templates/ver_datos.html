@@ -51,13 +51,13 @@
                 </div>
             </div>
 
-            <!-- Tabla de datos -->
-            <div class="table-responsive" style="max-width: 100%; overflow-x: auto;">
-                <table class="table table-striped" style="white-space: nowrap;">
+            <!-- Tabla -->
+            <div class="table-responsive">
+                <table class="table table-striped">
                     <thead>
                         <tr>
                             {% for columna in columnas %}
-                                <th>{{ columna }}</th>
+                                <th style="white-space: nowrap;">{{ columna }}</th>
                             {% endfor %}
                         </tr>
                     </thead>
@@ -65,13 +65,24 @@
                         {% for fila in datos %}
                             <tr>
                                 {% for columna in columnas %}
-                                    <td>
+                                    <td style="white-space: nowrap;">
                                         {% with valor=fila|get_item:columna %}
                                             {% if valor|stringformat:"s"|matches_coordinates %}
-                                                <a href="#map" class="coordenada-link" 
-                                                   data-coords="{{ valor|stringformat:"s"|trim }}">{{ valor }}</a>
+                                                <a href="#map" class="coordenada-link" data-coords="{{ valor }}">{{ valor }}</a>
                                             {% else %}
-                                                {{ valor }}
+                                                {% with texto_completo=valor|stringformat:"s" %}
+                                                    {{ texto_completo|truncatechars:100 }}
+                                                    {% if texto_completo|length > 100 %}
+                                                        <button type="button" class="btn btn-link btn-sm p-0 ms-1" 
+                                                                data-bs-toggle="popover" 
+                                                                data-bs-trigger="click"
+                                                                data-bs-content="{{ texto_completo }}"
+                                                                data-bs-title="{{ columna }}"
+                                                                data-bs-html="true">
+                                                            <small>[Ver más]</small>
+                                                        </button>
+                                                    {% endif %}
+                                                {% endwith %}
                                             {% endif %}
                                         {% endwith %}
                                     </td>
@@ -80,6 +91,18 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+
+            <!-- El contenedor del mapa -->
+            <div id="mapContainer" style="display: none;">
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">Ubicaciones en Mapa</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="map" style="height: 400px;"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- Paginación -->
@@ -110,144 +133,6 @@
                     {% endif %}
                 </ul>
             </nav>
-
-            <!-- Mapa -->
-            <div id="map-section" style="display: none;">
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">Ubicación en Mapa</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="map" style="height: 400px; width: 100%;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Leaflet CSS y JS -->
-            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-            <script>
-            let map;
-            let marker;
-            let mapInitialized = false;
-
-            function initMap() {
-                if (!mapInitialized) {
-                    map = L.map('map').setView([-36.8094955, -73.0674156], 13);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap contributors'
-                    }).addTo(map);
-                    mapInitialized = true;
-                }
-            }
-
-            function showLocation(coords) {
-                document.getElementById('map-section').style.display = 'block';
-                if (!mapInitialized) {
-                    initMap();
-                }
-
-                const [lat, lng] = coords.split(',').map(coord => parseFloat(coord.trim()));
-                
-                if (marker) {
-                    marker.setLatLng([lat, lng]);
-                } else {
-                    marker = L.marker([lat, lng]).addTo(map);
-                }
-
-                map.setView([lat, lng], 15);
-                marker.bindPopup(`Ubicación: ${coords}`).openPopup();
-                
-                // Asegurar que el mapa se renderice correctamente
-                setTimeout(() => {
-                    map.invalidateSize();
-                }, 100);
-            }
-
-            document.addEventListener('DOMContentLoaded', function() {
-                const coordLinks = document.querySelectorAll('.coordenada-link');
-                if (coordLinks.length > 0) {
-                    document.getElementById('map-section').style.display = 'block';
-                    initMap();
-                }
-
-                coordLinks.forEach(link => {
-                    link.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const coords = this.getAttribute('data-coords');
-                        showLocation(coords);
-                    });
-                });
-            });
-
-            function resetSearch() {
-                document.getElementById('searchInput').value = '';
-                document.getElementById('columnaSelect').value = '';
-                filterTable();
-            }
-
-            function filterTable() {
-                const searchText = document.getElementById('searchInput').value.toLowerCase();
-                const selectedColumn = document.getElementById('columnaSelect').value;
-                const rows = document.querySelectorAll('table tbody tr');
-
-                rows.forEach(row => {
-                    const cells = row.getElementsByTagName('td');
-                    let found = false;
-
-                    Array.from(cells).forEach((cell, index) => {
-                        if (!selectedColumn || columnas[index] === selectedColumn) {
-                            if (cell.textContent.toLowerCase().includes(searchText)) {
-                                found = true;
-                            }
-                        }
-                    });
-
-                    row.style.display = found ? '' : 'none';
-                });
-            }
-
-            // Agregar funcionalidad para cambiar items por página
-            document.getElementById('itemsPerPage').addEventListener('change', function() {
-                const items = this.value;
-                window.location.href = updateQueryStringParameter(window.location.href, 'items', items);
-            });
-
-            // Función auxiliar para actualizar parámetros URL
-            function updateQueryStringParameter(uri, key, value) {
-                const re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
-                const separator = uri.indexOf('?') !== -1 ? "&" : "?";
-                
-                if (uri.match(re)) {
-                    return uri.replace(re, '$1' + key + "=" + value + '$2');
-                } else {
-                    return uri + separator + key + "=" + value;
-                }
-            }
-
-            document.addEventListener('DOMContentLoaded', function() {
-                const searchInput = document.getElementById('searchInput');
-                const columnaSelect = document.getElementById('columnaSelect');
-                
-                searchInput.addEventListener('input', filterTable);
-                columnaSelect.addEventListener('change', filterTable);
-            });
-
-            const columnas = [{% for columna in columnas %}'{{ columna }}',{% endfor %}];
-            </script>
-
-            <style>
-            .coordenada-link {
-                color: #007bff;
-                text-decoration: none;
-                cursor: pointer;
-            }
-
-            .coordenada-link:hover {
-                text-decoration: underline;
-            }
-            </style>
         {% else %}
             <div class="alert alert-info d-flex justify-content-between align-items-center">
                 <span>No hay datos para mostrar</span>
@@ -258,4 +143,182 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Agregar Leaflet CSS y JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+document.getElementById('itemsPerPage').addEventListener('change', function() {
+    var urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('items', this.value);
+    window.location.href = '?' + urlParams.toString();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar si hay coordenadas en la tabla
+    const coordLinks = document.querySelectorAll('.coordenada-link');
+    let map = null;
+    let currentMarker = null; // Para mantener referencia al marcador actual
+
+    if (coordLinks.length > 0) {
+        // Mostrar el contenedor del mapa si hay coordenadas
+        document.getElementById('mapContainer').style.display = 'block';
+        
+        // Inicializar el mapa
+        map = L.map('map').setView([-36.8094955, -73.0674156], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Función para manejar el clic en una coordenada
+        function handleCoordClick(e) {
+            e.preventDefault();
+            const coords = e.target.dataset.coords.split(',').map(coord => parseFloat(coord.trim()));
+
+            // Remover el marcador anterior si existe
+            if (currentMarker) {
+                map.removeLayer(currentMarker);
+            }
+
+            // Crear nuevo marcador
+            currentMarker = L.marker(coords)
+                .addTo(map)
+                .bindPopup(`Ubicación: ${coords[0]}, ${coords[1]}`);
+
+            // Hacer zoom a la ubicación
+            map.setView(coords, 15);
+            
+            // Abrir el popup del marcador
+            currentMarker.openPopup();
+        }
+
+        // Agregar event listeners a los enlaces de coordenadas
+        coordLinks.forEach(link => {
+            link.addEventListener('click', handleCoordClick);
+        });
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const textoModal = new bootstrap.Modal(document.getElementById('textoModal'), {
+        keyboard: true,
+        backdrop: true
+    });
+    
+    window.mostrarTextoCompleto = function(texto, columna) {
+        document.getElementById('textoModalLabel').textContent = columna;
+        document.getElementById('textoModalContent').textContent = texto;
+        textoModal.show();
+    };
+});
+
+// Función para resetear búsqueda
+function resetSearch() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('columnaSelect').value = '';
+    filterTable();
+}
+
+// Función para filtrar tabla
+function filterTable() {
+    const searchText = document.getElementById('searchInput').value.toLowerCase();
+    const selectedColumn = document.getElementById('columnaSelect').value;
+    const rows = document.querySelectorAll('table tbody tr');
+
+    rows.forEach(row => {
+        const cells = row.getElementsByTagName('td');
+        let found = false;
+
+        Array.from(cells).forEach((cell, index) => {
+            if (!selectedColumn || columnas[index] === selectedColumn) {
+                if (cell.textContent.toLowerCase().includes(searchText)) {
+                    found = true;
+                }
+            }
+        });
+
+        row.style.display = found ? '' : 'none';
+    });
+}
+
+// Modal para texto completo
+let modal = null;
+document.addEventListener('DOMContentLoaded', function() {
+    modal = new bootstrap.Modal(document.getElementById('textoModal'));
+    
+    // Event listeners para búsqueda
+    const searchInput = document.getElementById('searchInput');
+    const columnaSelect = document.getElementById('columnaSelect');
+    searchInput.addEventListener('input', filterTable);
+    columnaSelect.addEventListener('change', filterTable);
+});
+
+function mostrarTextoCompleto(texto, columna) {
+    const modalEl = document.getElementById('textoModal');
+    modalEl.querySelector('.modal-title').textContent = columna;
+    modalEl.querySelector('.modal-body p').textContent = texto;
+    modal.show();
+}
+
+// Variables para el script
+const columnas = JSON.parse('{% if columnas %}[{% for columna in columnas %}"{{ columna }}"{% if not forloop.last %},{% endif %}{% endfor %}]{% else %}[]{% endif %}');
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar todos los popovers
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl, {
+            container: 'body',
+            placement: 'auto'
+        })
+    })
+
+    // Cerrar popover al hacer clic en cualquier parte
+    document.addEventListener('click', function(e) {
+        if (!e.target.matches('[data-bs-toggle="popover"]')) {
+            popoverTriggerList.forEach(function(popover) {
+                bootstrap.Popover.getInstance(popover)?.hide();
+            });
+        }
+    });
+});
+</script>
+
+<!-- Modal para texto completo -->
+<div class="modal fade" id="textoModal" tabindex="-1" aria-labelledby="textoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="textoModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="textoModalContent" style="white-space: pre-wrap;"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.tooltip-inner {
+    max-width: 350px;
+    text-align: left;
+    padding: 10px;
+    background-color: #fff;
+    color: #000;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.popover {
+    max-width: 400px;
+}
+.popover-body {
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-size: 14px;
+    padding: 15px;
+}
+</style>
 {% endblock %} 

@@ -31,3 +31,13 @@ class Videojuego(models.Model):
 
     def __str__(self):
         return self.nombre
+
+class TablaImportada(models.Model):
+    nombre = models.CharField(max_length=255)
+    fecha_importacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = '%(app_label)s_%(class)s'  # Esto asegura que el nombre de la tabla sea en minúsculas
+
+    def __str__(self):
+        return self.nombre

@@ -1,11 +1,18 @@
 from django.contrib import messages
-from django.shortcuts import render, redirect, HttpResponseRedirect
-from .models import Personas, Animal, Videojuego
-from django.http import HttpResponseRedirect
+from django.shortcuts import render, redirect, HttpResponseRedirect, get_object_or_404
+from .models import Personas, Animal, Videojuego, TablaImportada
+from django.http import HttpResponseRedirect, JsonResponse
 import pandas as pd
 from sqlalchemy import create_engine
 from django.views.decorators.csrf import csrf_exempt
 from django.core.paginator import Paginator
+from django.db import connection
+from urllib.parse import unquote
+import logging
+from psycopg2.extensions import AsIs, quote_ident
+from django.template.response import TemplateResponse
+
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 
@@ -102,7 +109,23 @@ def registrarAnimal(request):
 
 def edicionPersona(request, id):
     persona = Personas.objects.get(id=id)
-    return render(request, "edicionPersona.html", {"persona": persona})
+    
+    if request.method == 'POST':
+        # Actualizar la persona con los datos del formulario
+        persona.nombre = request.POST.get('nombre')
+        persona.apellidos = request.POST.get('apellidos')
+        persona.edad = request.POST.get('edad')
+        persona.email = request.POST.get('email')
+        persona.save()
+        
+        # Redirigir a la página de origen
+        source = request.POST.get('source', 'gestion')
+        if source == 'prueba':
+            return redirect('gestionPersonasPrueba')
+        else:
+            return redirect('gestionPersonas')
+    
+    return render(request, 'edicionPersona.html', {'persona': persona, 'source': request.GET.get('source', 'gestion')})
 
 def edicionAnimal(request, id):
     animal =Animal.objects.get(id=id)
@@ -169,8 +192,17 @@ def eliminarAnimal(request, id):
 
 
 def listar_videojuegos(request):
+    consolas = {
+        'Nintendo': ['Switch', 'Wii U', '3DS', 'Nintendo 64', 'GameCube', 'Wii', 'Game Boy', 'Game Boy Color', 'Game Boy Advance', 'DS', 'New 3DS'],
+        'Xbox': ['Xbox', 'Xbox 360', 'Xbox One', 'Xbox Series S', 'Xbox Series X'],
+        'PlayStation': ['PS1', 'PS2', 'PS3', 'PS4', 'PS5', 'PSP', 'PS Vita']
+    }
+    
     videojuegos = Videojuego.objects.all()
-    return render(request, 'videojuegos.html', {'videojuegos': videojuegos})
+    return render(request, 'videojuegos.html', {
+        'videojuegos': videojuegos,
+        'consolas': consolas
+    })
 
 def registrarVideojuego(request):
     # Función para capitalizar solo palabras en minúsculas
@@ -197,8 +229,16 @@ def registrarVideojuego(request):
     return redirect('videojuegos')
 
 def edicionVideojuego(request, id):
+    consolas = {
+        'Nintendo': ['Switch', 'Wii U', '3DS', 'Nintendo 64', 'GameCube', 'Wii', 'Game Boy', 'Game Boy Color', 'Game Boy Advance', 'DS', 'New 3DS'],
+        'Xbox': ['Xbox', 'Xbox 360', 'Xbox One', 'Xbox Series S', 'Xbox Series X'],
+        'PlayStation': ['PS1', 'PS2', 'PS3', 'PS4', 'PS5', 'PSP', 'PS Vita']
+    }
     videojuego = Videojuego.objects.get(id=id)
-    return render(request, "edicionVideojuego.html", {"videojuego": videojuego})
+    return render(request, "edicionVideojuego.html", {
+        "videojuego": videojuego,
+        "consolas": consolas
+    })
 
 def editarVideojuego(request):
     # Función para capitalizar solo palabras en minúsculas
@@ -322,28 +362,201 @@ def ver_datos_importados(request):
         pagina = request.GET.get('pagina', 1)
         datos_paginados = paginator.get_page(pagina)
         
-        # Detectar columnas de coordenadas
-        coordenadas_columnas = []
-        for columna in df.columns:
-            muestra = df[columna].dropna().head(1)
-            if len(muestra) > 0:
-                valor = str(muestra.iloc[0])
-                if ',' in valor:
-                    try:
-                        lat, lng = map(float, valor.split(','))
-                        if -90 <= lat <= 90 and -180 <= lng <= 180:
-                            coordenadas_columnas.append(columna)
-                    except:
-                        pass
-
         return render(request, 'ver_datos.html', {
             'datos': datos_paginados,
             'columnas': columnas,
             'tabla_nombre': tabla_nombre,
             'items_por_pagina': items_por_pagina,
-            'coordenadas_columnas': coordenadas_columnas  # Agregar al contexto
+            'columna_actual': columna_busqueda,
+            'busqueda_actual': texto_busqueda
         })
         
     except Exception as e:
         messages.error(request, f'Error al cargar los datos: {str(e)}')
         return render(request, 'ver_datos.html', {'datos': None, 'columnas': None})
+
+def ver_tablas(request):
+    # Obtener lista de tablas de la base de datos
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public'
+            AND table_type = 'BASE TABLE'
+            AND table_name NOT IN (
+                'django_migrations',
+                'auth_user',
+                'django_session',
+                'django_content_type',
+                'auth_permission',
+                'auth_group',
+                'auth_group_permissions',
+                'django_admin_log',
+                'auth_user_groups',
+                'auth_user_user_permissions'
+            )
+            ORDER BY table_name
+        """)
+        tablas = [row[0] for row in cursor.fetchall()]
+
+    return render(request, 'lista_tablas.html', {'tablas': tablas})
+
+def ver_datos_tabla(request, nombre_tabla):
+    try:
+        with connection.cursor() as cursor:
+            # Verificar si la tabla existe
+            cursor.execute("""
+                SELECT tablename 
+                FROM pg_tables 
+                WHERE schemaname = 'public' 
+                AND tablename = %s
+            """, [nombre_tabla])
+            
+            result = cursor.fetchone()
+            
+            if not result:
+                return render(request, 'verDatosTabla.html', {
+                    'error': f'La tabla "{nombre_tabla}" no existe.',
+                    'nombre_tabla': nombre_tabla,
+                    'columnas': [],
+                    'datos': []
+                })
+            
+            # Obtener los datos
+            cursor.execute(f'SELECT * FROM "{nombre_tabla}" LIMIT 1000')
+            columnas = [desc[0] for desc in cursor.description]
+            datos = cursor.fetchall()
+            
+            # Convertir los datos a un formato más amigable
+            datos_formateados = []
+            for fila in datos:
+                datos_formateados.append([str(valor) if valor is not None else '' for valor in fila])
+            
+            return render(request, 'verDatosTabla.html', {
+                'nombre_tabla': nombre_tabla,
+                'columnas': columnas,
+                'datos': datos_formateados,
+                'error': None
+            })
+            
+    except Exception as e:
+        return render(request, 'verDatosTabla.html', {
+            'error': str(e),
+            'nombre_tabla': nombre_tabla,
+            'columnas': [],
+            'datos': []
+        })
+
+def importar_personas(request):
+    if request.method == 'POST' and request.FILES['archivo']:
+        archivo = request.FILES['archivo']
+        nombre_tabla = request.POST.get('nombre_tabla', '').lower()
+        
+        if not nombre_tabla:
+            nombre_tabla = archivo.name.split('.')[0].lower()
+
+        try:
+            # Tu código existente de importación...
+            
+            # Después de importar exitosamente
+            messages.success(request, f'Tabla "{nombre_tabla}" importada correctamente')
+            return redirect('ver_datos', nombre_tabla=nombre_tabla)
+            
+        except Exception as e:
+            messages.error(request, f'Error al importar: {str(e)}')
+            return redirect('importar_personas')
+    
+    return render(request, 'importar.html')
+
+def registrar_videojuego(request):
+    consolas = {
+        'Nintendo': ['Switch', 'Wii U', 'Wii', 'New 3DS', '3DS', 'Gameboy Advance'],
+        'Xbox': ['Xbox One', 'Xbox 360', 'Xbox Series X'],
+        'PlayStation': ['PS3', 'PS4', 'PS5', 'PS Vita']
+    }
+    
+    if request.method == 'POST':
+        # Procesar el formulario aquí
+        pass
+
+    return render(request, 'Aplicaciones/Personas/templates/videojuegos.html', {'consolas': consolas})
+
+def gestion_personas_prueba(request):
+    # Obtener la lista de personas
+    personas = Personas.objects.all()
+    
+    # Pasar la lista de personas al contexto
+    context = {
+        'personas': personas
+    }
+    
+    return render(request, 'GestionPersonasPrueba.html', context)
+
+def gestion_personas(request):
+    # Obtener la lista de personas
+    personas = Personas.objects.all()
+    
+    # Pasar la lista de personas al contexto
+    context = {
+        'personas': personas
+    }
+    
+    return render(request, 'gestionPersonas.html', context)
+
+def edicion_persona(request, id):
+    persona = get_object_or_404(Personas, id=id)
+    
+    if request.method == 'POST':
+        # Actualizar la persona con los datos del formulario
+        persona.nombre = request.POST.get('nombre')
+        persona.apellidos = request.POST.get('apellidos')
+        persona.edad = request.POST.get('edad')
+        persona.email = request.POST.get('email')
+        persona.save()
+        
+        # Redirigir a la página de origen
+        source = request.POST.get('source', 'gestion')
+        if source == 'prueba':
+            return redirect('gestionPersonasPrueba')
+        else:
+            return redirect('gestionPersonas')
+    
+    return render(request, 'edicionPersona.html', {'persona': persona, 'source': request.GET.get('source', 'gestion')})
+
+def listar_tablas_importadas(request):
+    with connection.cursor() as cursor:
+        # Obtener todas las tablas y organizarlas por tipo
+        cursor.execute("""
+            SELECT tablename, 
+                   CASE 
+                       WHEN tablename ILIKE 'personas_%' THEN 'Tablas del Sistema'
+                       WHEN tablename ILIKE 'auth_%' OR tablename ILIKE 'django_%' THEN 'Tablas de Django'
+                       ELSE 'Tablas Importadas'
+                   END as tipo
+            FROM pg_tables 
+            WHERE schemaname = 'public' 
+            AND tablename NOT IN (
+                'django_migrations',
+                'auth_user',
+                'django_session',
+                'django_content_type',
+                'auth_permission',
+                'auth_group',
+                'auth_group_permissions',
+                'django_admin_log',
+                'auth_user_groups',
+                'auth_user_user_permissions'
+            )
+            ORDER BY tipo, tablename;
+        """)
+        
+        # Organizar las tablas por categorías
+        tablas_por_tipo = {}
+        for tabla, tipo in cursor.fetchall():
+            if tipo not in tablas_por_tipo:
+                tablas_por_tipo[tipo] = []
+            tablas_por_tipo[tipo].append(tabla)
+        
+        return render(request, 'listarTablasImportadas.html', {
+            'tablas_por_tipo': tablas_por_tipo
+        })

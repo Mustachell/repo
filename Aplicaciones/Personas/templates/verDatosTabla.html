@@ -1,0 +1,202 @@
+{% extends "./base.html" %}
+
+{% block title %}Datos de {{ nombre_tabla }}{% endblock %}
+
+{% block body %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="mb-0">{{ nombre_tabla }}</h2>
+    </div>
+    
+    <div class="card-body">
+        {% if error %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+        {% else %}
+            {% if datos %}
+                <div class="table-responsive">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">Mostrar</span>
+                            <select class="form-select form-select-sm w-auto" id="entriesSelect">
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                            <span class="ms-2">registros</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <input type="text" 
+                                   class="form-control form-control-sm" 
+                                   id="searchInput" 
+                                   placeholder="Buscar...">
+                        </div>
+                    </div>
+
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                {% for columna in columnas %}
+                                    <th>{{ columna }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fila in datos %}
+                                <tr class="data-row">
+                                    {% for valor in fila %}
+                                        <td>
+                                            {% if valor|length > 100 %}
+                                                <div class="text-content">
+                                                    <span class="short-text">{{ valor|slice:":100" }}...</span>
+                                                    <span class="full-text" style="display: none;">{{ valor }}</span>
+                                                    <button class="btn btn-link btn-sm toggle-text" type="button">
+                                                        Ver más
+                                                    </button>
+                                                </div>
+                                            {% else %}
+                                                {{ valor|default_if_none:'-' }}
+                                            {% endif %}
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div>
+                            Mostrando <span id="startIndex">1</span> a <span id="endIndex">10</span> de <span id="totalItems">{{ datos|length }}</span> registros
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-secondary btn-sm" id="prevButton">
+                                Anterior
+                            </button>
+                            <button class="btn btn-secondary btn-sm" id="nextButton">
+                                Siguiente
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    La tabla existe pero no contiene datos.
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<!-- Popup para mostrar texto completo -->
+<div class="toast" id="popupToast" style="position: absolute; top: 20px; right: 20px; z-index: 1050; display: none;" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header">
+        <strong class="me-auto">Texto Completo</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body">
+        <span id="fullTextContent"></span>
+    </div>
+</div>
+
+<style>
+.text-content {
+    position: relative;
+}
+.toggle-text {
+    padding: 0;
+    text-decoration: none;
+    color: #0d6efd;
+}
+.toggle-text:hover {
+    text-decoration: underline;
+}
+pre.texto-completo {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = Array.from(document.querySelectorAll('.data-row'));
+    const entriesSelect = document.getElementById('entriesSelect');
+    const prevButton = document.getElementById('prevButton');
+    const nextButton = document.getElementById('nextButton');
+    const startIndexSpan = document.getElementById('startIndex');
+    const endIndexSpan = document.getElementById('endIndex');
+    const totalItemsSpan = document.getElementById('totalItems');
+    const searchInput = document.getElementById('searchInput');
+    
+    let currentPage = 1;
+    let rowsPerPage = parseInt(entriesSelect.value);
+    let filteredRows = rows;
+    
+    function updatePagination() {
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = Math.min(startIndex + rowsPerPage, filteredRows.length);
+        
+        rows.forEach(row => row.style.display = 'none');
+        filteredRows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
+        
+        startIndexSpan.textContent = filteredRows.length ? startIndex + 1 : 0;
+        endIndexSpan.textContent = endIndex;
+        totalItemsSpan.textContent = filteredRows.length;
+        
+        prevButton.disabled = currentPage === 1;
+        nextButton.disabled = endIndex >= filteredRows.length;
+    }
+    
+    function filterRows() {
+        const searchText = searchInput.value.toLowerCase();
+        filteredRows = rows.filter(row => 
+            Array.from(row.cells).some(cell => 
+                cell.textContent.toLowerCase().includes(searchText)
+            )
+        );
+        currentPage = 1;
+        updatePagination();
+    }
+    
+    entriesSelect.addEventListener('change', function() {
+        rowsPerPage = parseInt(this.value);
+        currentPage = 1;
+        updatePagination();
+    });
+    
+    prevButton.addEventListener('click', function() {
+        if (currentPage > 1) {
+            currentPage--;
+            updatePagination();
+        }
+    });
+    
+    nextButton.addEventListener('click', function() {
+        if (currentPage * rowsPerPage < filteredRows.length) {
+            currentPage++;
+            updatePagination();
+        }
+    });
+    
+    searchInput.addEventListener('keyup', filterRows);
+    
+    const popupToast = new bootstrap.Toast(document.getElementById('popupToast'));
+
+    // Manejar el botón "Ver más"
+    document.querySelectorAll('.toggle-text').forEach(button => {
+        button.addEventListener('click', function() {
+            const container = this.closest('.text-content');
+            const fullText = container.querySelector('.full-text').textContent;
+            document.getElementById('fullTextContent').textContent = fullText; // Mostrar el texto completo
+            popupToast.show(); // Mostrar el popup
+        });
+    });
+    
+    updatePagination();
+});
+</script>
+{% endblock %}

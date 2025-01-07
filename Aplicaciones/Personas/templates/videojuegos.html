@@ -34,7 +34,16 @@
                         <input type="number" id="numPrecio" name="numPrecio" class="form-control" placeholder="Precio en CLP" required>
                     </div>
                     <div class="form-group">
-                        <input type="text" id="txtConsola" name="txtConsola" class="form-control" placeholder="Consola" required>
+                        <select id="txtConsola" name="txtConsola" class="form-control" required>
+                            <option value="" disabled selected>Seleccione una consola</option>
+                            {% for marca, consolas in consolas.items %}
+                                <optgroup label="{{ marca }}">
+                                    {% for consola in consolas %}
+                                        <option value="{{ consola }}">{{ consola }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="form-group">
                         <input type="number" id="numCantidad" name="numCantidad" class="form-control" placeholder="Cantidad disponible" required>
@@ -53,32 +62,65 @@
                 </form>
             </div>
         </div>
-    </div>
-    <div class="col-sm-12 col-md-6 col-lg-8 col-xl-8">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h1>Listado de Videojuegos</h1>
-            <div class="d-flex align-items-center">
-                <div class="form-group me-3">
-                    <select id="searchColumn" class="form-select form-select-sm me-2" style="width: auto; display: inline-block;">
+        
+        <!-- Filtros movidos aquí -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Filtros de búsqueda</h5>
+            </div>
+            <div class="card-body">
+                <div class="form-group mb-3">
+                    <label class="form-label">Buscar por:</label>
+                    <select id="searchColumn" class="form-select">
                         <option value="nombre">Nombre</option>
-                        <option value="precio">Precio</option>
                         <option value="consola">Consola</option>
                         <option value="cantidad">Cantidad</option>
                         <option value="disponibilidad">Disponibilidad</option>
                     </select>
-                    <input type="text" id="searchInput" class="form-control form-control-sm" 
-                           placeholder="Buscar...">
                 </div>
-                <div class="form-group mb-0">
-                    <label for="entriesSelect" class="me-2">Mostrar:</label>
-                    <select id="entriesSelect" class="form-select form-select-sm" style="width: auto; display: inline-block;">
-                        <option value="5">5</option>
-                        <option value="10">10</option>
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
+                <div class="form-group mb-3" id="searchInputContainer">
+                    <label class="form-label">Término de búsqueda:</label>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Buscar...">
+                    <!-- Nuevo select para consolas que se mostrará cuando se seleccione "consola" -->
+                    <select id="searchConsola" class="form-control" style="display: none;">
+                        <option value="">Todas las consolas</option>
+                        {% for marca, consolas in consolas.items %}
+                            <optgroup label="{{ marca }}">
+                                {% for consola in consolas %}
+                                    <option value="{{ consola }}">{{ consola }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        {% endfor %}
                     </select>
                 </div>
+                <div class="form-group mb-3">
+                    <label class="form-label">Rango de Precio:</label>
+                    <div class="d-flex gap-2">
+                        <input type="number" id="minPrice" class="form-control" placeholder="Mínimo">
+                        <input type="number" id="maxPrice" class="form-control" placeholder="Máximo">
+                    </div>
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-primary" onclick="aplicarFiltros()">Buscar</button>
+                    <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">Limpiar Filtros</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-sm-12 col-md-6 col-lg-8 col-xl-8">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1>Listado de Videojuegos</h1>
+            <!-- Selector de entradas a la derecha -->
+            <div class="d-flex align-items-center">
+                <label class="me-2">Mostrar:</label>
+                <select id="entriesSelect" class="form-select" style="width: auto;">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
             </div>
         </div>
         <div class="table-responsive py-2">
@@ -135,6 +177,20 @@
     </div>
 </div>
 
+<!-- Sección del mapa -->
+<div class="row mt-3" id="mapContainer" style="display: none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Ubicaciones en Mapa</h5>
+            </div>
+            <div class="card-body">
+                <div id="map" style="height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Mover los scripts aquí, dentro del bloque body -->
 <script>
 // Script para los mensajes
@@ -147,32 +203,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 5000);
 });
 
-// Script para el límite de la lista
+// Script para el límite de la lista (esto se mantiene separado del filtrado)
 document.addEventListener('DOMContentLoaded', function() {
     const entriesSelect = document.getElementById('entriesSelect');
     const rows = document.querySelectorAll('.videojuego-row');
-    
-    function updateVisibleRows() {
-        const selectedValue = parseInt(entriesSelect.value);
-        rows.forEach((row, index) => {
-            row.style.display = index < selectedValue ? '' : 'none';
-        });
-    }
-    
-    // Establecer valor inicial y actualizar vista
-    entriesSelect.value = '5';
-    updateVisibleRows();
-    
-    // Escuchar cambios en el selector
-    entriesSelect.addEventListener('change', updateVisibleRows);
-});
-
-// Script para búsqueda por consola
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('searchInput');
-    const searchColumn = document.getElementById('searchColumn');
-    const rows = document.querySelectorAll('.videojuego-row');
-    const entriesSelect = document.getElementById('entriesSelect');
     const prevButton = document.getElementById('prevPage');
     const nextButton = document.getElementById('nextPage');
     const startIndexSpan = document.getElementById('startIndex');
@@ -180,67 +214,100 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalItemsSpan = document.getElementById('totalItems');
     
     let currentPage = 1;
-    let rowsPerPage = 5;
     
-    function normalizeText(text) {
-        return text.toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/[^a-z0-9\s]/g, '');
+    function updatePagination() {
+        // Obtener solo las filas que deberían ser visibles (no filtradas)
+        const visibleRows = Array.from(rows).filter(row => !row.hasAttribute('data-filtered'));
+        const entriesPerPage = parseInt(entriesSelect.value);
+        const totalItems = visibleRows.length;
+        const totalPages = Math.ceil(totalItems / entriesPerPage);
+        
+        // Ocultar todas las filas primero
+        rows.forEach(row => row.style.display = 'none');
+        
+        // Mostrar solo las filas de la página actual
+        visibleRows.slice(
+            (currentPage - 1) * entriesPerPage,
+            currentPage * entriesPerPage
+        ).forEach(row => row.style.display = '');
+        
+        // Actualizar botones de navegación
+        prevButton.disabled = currentPage <= 1;
+        nextButton.disabled = currentPage >= totalPages;
+        
+        // Actualizar información de paginación
+        const start = totalItems === 0 ? 0 : (currentPage - 1) * entriesPerPage + 1;
+        const end = Math.min(start + entriesPerPage - 1, totalItems);
+        startIndexSpan.textContent = start;
+        endIndexSpan.textContent = end;
+        totalItemsSpan.textContent = totalItems;
     }
     
-    function filterRows() {
-        const searchTerm = normalizeText(searchInput.value);
-        const selectedColumn = searchColumn.value;
+    function aplicarFiltros() {
+        const searchColumn = document.getElementById('searchColumn').value;
+        const searchText = searchColumn === 'consola' 
+            ? document.getElementById('searchConsola').value 
+            : document.getElementById('searchInput').value.toLowerCase();
+        const minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
+        const maxPrice = parseFloat(document.getElementById('maxPrice').value) || Infinity;
         
         rows.forEach(row => {
-            let cellIndex;
-            switch(selectedColumn) {
-                case 'nombre': cellIndex = 1; break;
-                case 'precio': cellIndex = 2; break;
-                case 'consola': cellIndex = 3; break;
-                case 'cantidad': cellIndex = 4; break;
-                case 'disponibilidad': cellIndex = 5; break;
-                default: cellIndex = 1;
+            let found = false;
+            const cells = row.getElementsByTagName('td');
+            const precio = parseFloat(cells[2].textContent.replace('$', '').replace(/\./g, '')) || 0;
+            
+            const precioEnRango = precio >= minPrice && (maxPrice === Infinity || precio <= maxPrice);
+            
+            Array.from(cells).forEach((cell, index) => {
+                if (getColumnName(index) === searchColumn) {
+                    if (searchColumn === 'consola') {
+                        if (searchText === '' || cell.textContent === searchText) {
+                            found = true;
+                        }
+                    } else {
+                        if (cell.textContent.toLowerCase().includes(searchText)) {
+                            found = true;
+                        }
+                    }
+                }
+            });
+            
+            if (searchText === '') {
+                found = true;
             }
             
-            const cell = row.querySelector(`td:nth-child(${cellIndex + 1})`);
-            const cellText = normalizeText(cell.textContent);
-            
-            row.dataset.filtered = cellText.includes(searchTerm) ? 'true' : 'false';
+            // Usar data-filtered para marcar filas filtradas
+            if (!(found && precioEnRango)) {
+                row.setAttribute('data-filtered', '');
+            } else {
+                row.removeAttribute('data-filtered');
+            }
         });
         
         currentPage = 1;
         updatePagination();
     }
     
-    function updatePagination() {
-        const filteredRows = Array.from(rows).filter(row => row.dataset.filtered !== 'false');
-        const totalRows = filteredRows.length;
-        const totalPages = Math.ceil(totalRows / rowsPerPage);
-        const startIndex = (currentPage - 1) * rowsPerPage;
-        const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
+    function limpiarFiltros() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('searchConsola').value = '';
+        document.getElementById('searchColumn').value = 'nombre';
+        document.getElementById('minPrice').value = '';
+        document.getElementById('maxPrice').value = '';
         
-        rows.forEach(row => row.style.display = 'none');
+        // Restaurar visibilidad de campos
+        document.getElementById('searchInput').style.display = 'block';
+        document.getElementById('searchConsola').style.display = 'none';
         
-        filteredRows.slice(startIndex, endIndex).forEach(row => {
-            row.style.display = '';
-        });
+        // Limpiar filtros de todas las filas
+        rows.forEach(row => row.removeAttribute('data-filtered'));
         
-        prevButton.disabled = currentPage === 1;
-        nextButton.disabled = currentPage === totalPages || totalRows === 0;
-        
-        startIndexSpan.textContent = totalRows === 0 ? 0 : startIndex + 1;
-        endIndexSpan.textContent = endIndex;
-        totalItemsSpan.textContent = totalRows;
+        currentPage = 1;
+        updatePagination();
     }
     
     // Event Listeners
-    searchInput.addEventListener('input', filterRows);
-    searchColumn.addEventListener('change', filterRows);
-    
     entriesSelect.addEventListener('change', function() {
-        rowsPerPage = parseInt(this.value);
         currentPage = 1;
         updatePagination();
     });
@@ -253,8 +320,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     nextButton.addEventListener('click', function() {
-        const filteredRows = Array.from(rows).filter(row => row.dataset.filtered !== 'false');
-        const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+        const visibleRows = Array.from(rows).filter(row => !row.hasAttribute('data-filtered'));
+        const totalPages = Math.ceil(visibleRows.length / parseInt(entriesSelect.value));
         if (currentPage < totalPages) {
             currentPage++;
             updatePagination();
@@ -262,26 +329,89 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Inicialización
-    rows.forEach(row => row.dataset.filtered = 'true');
+    window.aplicarFiltros = aplicarFiltros;
+    window.limpiarFiltros = limpiarFiltros;
+    
     entriesSelect.value = '5';
     updatePagination();
 });
 
-document.addEventListener('DOMContentLoaded', function() {
-    const cantidadInput = document.getElementById('numCantidad');
-    const disponibilidadSelect = document.getElementById('selDisponibilidad');
+document.getElementById('searchColumn').addEventListener('change', function() {
+    const searchInput = document.getElementById('searchInput');
+    const searchConsola = document.getElementById('searchConsola');
+    
+    if (this.value === 'consola') {
+        searchInput.style.display = 'none';
+        searchConsola.style.display = 'block';
+    } else {
+        searchInput.style.display = 'block';
+        searchConsola.style.display = 'none';
+    }
+});
 
-    cantidadInput.addEventListener('change', function() {
-        if (parseInt(this.value) === 0) {
-            disponibilidadSelect.value = 'sin_stock';
-            disponibilidadSelect.disabled = true;
-        } else {
-            disponibilidadSelect.disabled = false;
-            if (disponibilidadSelect.value === 'sin_stock') {
-                disponibilidadSelect.value = 'ambos';
+function getColumnName(index) {
+    const columns = ['numero', 'nombre', 'precio', 'consola', 'cantidad', 'disponibilidad'];
+    return columns[index];
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar si hay coordenadas en la tabla
+    const rows = document.querySelectorAll('tr');
+    let hayCoordenadasEnTabla = false;
+    
+    rows.forEach(row => {
+        const cells = row.getElementsByTagName('td');
+        Array.from(cells).forEach(cell => {
+            // Verificar si el contenido de la celda parece ser coordenadas
+            const contenido = cell.textContent.trim();
+            if (contenido.includes(',') && contenido.split(',').length === 2) {
+                const [lat, lng] = contenido.split(',').map(coord => parseFloat(coord.trim()));
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    hayCoordenadasEnTabla = true;
+                }
             }
-        }
+        });
     });
+    
+    // Solo mostrar y inicializar el mapa si hay coordenadas
+    const mapContainer = document.getElementById('mapContainer');
+    if (!hayCoordenadasEnTabla) {
+        mapContainer.style.display = 'none';
+        return; // Salir si no hay coordenadas
+    }
+    
+    // Mostrar el contenedor del mapa
+    mapContainer.style.display = 'block';
+    
+    // Inicializar el mapa
+    var map = L.map('map').setView([-36.8094955, -73.0674156], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Agregar marcadores para cada coordenada
+    const markers = [];
+    rows.forEach(row => {
+        const cells = row.getElementsByTagName('td');
+        Array.from(cells).forEach(cell => {
+            const contenido = cell.textContent.trim();
+            if (contenido.includes(',') && contenido.split(',').length === 2) {
+                const [lat, lng] = contenido.split(',').map(coord => parseFloat(coord.trim()));
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    const marker = L.marker([lat, lng])
+                        .addTo(map)
+                        .bindPopup(`Ubicación: ${lat}, ${lng}`);
+                    markers.push(marker);
+                }
+            }
+        });
+    });
+    
+    // Si hay marcadores, ajustar el mapa para mostrarlos todos
+    if (markers.length > 0) {
+        const group = new L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
 });
 </script>
 {% endblock %} 
