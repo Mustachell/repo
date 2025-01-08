@@ -100,6 +100,10 @@
                         <input type="text" id="txtMantenedor" name="txtMantenedor" 
                                class="form-control" placeholder="Mantenedor" required>
                     </div>
+                    <div class="form-group">
+                        <input type="text" id="txtMantenedorApellido" name="txtMantenedorApellido" 
+                               class="form-control" placeholder="Apellido Mantenedor" required>
+                    </div>
                     <div class="form-group d-grid">
                         <button type="submit" class="btn btn-success">Guardar</button>
                     </div>
@@ -138,8 +142,9 @@
                         <th>Nombre</th>
                         <th>Especie</th>
                         <th>Edad</th>
-                        <th>Mantenedor/a</th>
-                        <th colspan="2">Opciones</th>
+                        <th>Mantenedor</th>
+                        <th>Apellido Mantenedor</th>
+                        <th colspan="2">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -150,6 +155,7 @@
                         <td>{{ a.especie }}</td>
                         <td>{{ a.edad }}</td>
                         <td>{{ a.mantenedor }}</td>
+                        <td>{{ a.mantenedor_apellido }}</td>
                         <td><a href="edicionAnimal/{{ a.id }}" class="btn btn-info">Editar</a></td>
                         <td><a href="eliminacionAnimal/{{ a.id }}" class="btn btn-danger"
                         onclick="return confirmDelete();">Eliminar</a></td>

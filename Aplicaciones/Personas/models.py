@@ -14,13 +14,14 @@ class Personas(models.Model):
        return texto.format(self.nombre, self.apellidos, self.email) 
 
 class Animal(models.Model):
-    nombre = models.CharField(max_length=50)  # Nuevo campo
+    nombre = models.CharField(max_length=50)
     especie = models.CharField(max_length=50)
     edad = models.IntegerField()
     mantenedor = models.CharField(max_length=50)
+    mantenedor_apellido = models.CharField(max_length=50, default='')
 
     def __str__(self):
-        return self.nombre
+        return f"{self.nombre} - {self.mantenedor} {self.mantenedor_apellido}"
 
 class Videojuego(models.Model):
     nombre = models.CharField(max_length=50)

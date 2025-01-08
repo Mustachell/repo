@@ -50,12 +50,32 @@
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-body text-center">
-                    <h3 class="card-title">Importar Datos</h3>
+                    <h3 class="card-title">Importacion de Datos</h3>
                     <p class="card-text">Importa y visualiza datos desde archivos.</p>
                     <a href="{% url 'importar_personas' %}" class="btn btn-primary">Ir a Importar Datos</a>
                 </div>
             </div>
         </div>
-    </div>
+
+       <div class="col-md-4">
+          <div class="card h-100">
+              <div class="card-body text-center">
+                 <h3 class="card-title">Prueba de Gestion de Personas y Animales</h3>
+                 <p class="card-text">Accede a la prueba de gestión de personas y animales con buscador cruzado.</p>
+                 <a href="{% url 'gestionPersonasPrueba' %}" class="btn btn-primary">Ir a Prueba</a>
+              </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h3 class="card-title">Ver tablas importadas</h3>
+             <p class="card-text">Ver las tablas importadas.</p>
+                    <a href="{% url 'listarTablasImportadas' %}" class="btn btn-primary">Ir a Tablas</a>
+                </div>
+            </div>
+        </div>
+     </div>
 </div>
 {% endblock %} 

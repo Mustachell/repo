@@ -51,32 +51,12 @@
 
 <div class="row">
     <div class="col-sm-12 col-md-6 col-lg-4 col-xl-4">
-        <h2>Gestión de Personas</h2>
-        <!-- Filtro basado en columna -->
-        <div class="form-group mt-3">
-            <label for="filterColumn" class="me-2">Filtrar por columna:</label>
-            <select id="filterColumn" class="form-select form-select-sm" style="width: auto; display: inline-block;">
-                <option value="1">Nombre</option>
-                <option value="2">Apellidos</option>
-                <option value="3">Edad</option>
-                <option value="4">Email</option>
-            </select>
-            <input type="text" id="filterInput" class="form-control" placeholder="Filtrar...">
-        </div>
+        <h2>Gestión de Personas y Animales</h2>
     </div>
 
     <div class="col-sm-12 col-md-6 col-lg-8 col-xl-8">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h1 class="mb-0">Listado de Personas</h1>
-            <div class="input-group" style="width: 300px;">
-                <select id="searchColumn" class="form-select flex-grow-0" style="width: auto;">
-                    <option value="1">Nombre</option>
-                    <option value="2">Apellidos</option>
-                    <option value="3">Edad</option>
-                    <option value="4">Email</option>
-                </select>
-                <input type="text" id="searchInput" class="form-control" placeholder="Buscar...">
-            </div>
+            <h1 class="mb-0">Listado de Personas y Animales</h1>
             <div class="form-group mb-3">
                 <label for="entriesSelect" class="me-2">Mostrar:</label>
                 <select id="entriesSelect" class="form-select form-select-sm" style="width: auto; display: inline-block;">
@@ -93,7 +73,7 @@
             </div>
         </div>
         <div class="table-responsive py-2">
-            <table class="table table-striped text-center">
+            <table class="table table-striped">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -101,19 +81,35 @@
                         <th>Apellidos</th>
                         <th>Edad</th>
                         <th>Email</th>
-                        <th colspan="2">Opciones</th>
+                        <th>Animales a Cargo</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for p in personas %}
+                    {% for persona in personas %}
                     <tr class="persona-row">
                         <td>{{ forloop.counter }}</td>
-                        <td>{{ p.nombre }}</td>
-                        <td>{{ p.apellidos }}</td>
-                        <td>{{ p.edad }}</td>
-                        <td>{{ p.email }}</td>
-                        <td><a href="/edicionPersona/{{ p.id }}?source=prueba" class="btn btn-info">Editar</a></td>
-                        <!-- Eliminar opción de eliminación -->
+                        <td>{{ persona.nombre }}</td>
+                        <td>{{ persona.apellidos }}</td>
+                        <td>{{ persona.edad }}</td>
+                        <td>{{ persona.email }}</td>
+                        <td>
+                            {% for animal in animales %}
+                                {% if animal.mantenedor == persona.nombre and animal.mantenedor_apellido == persona.apellidos %}
+                                <div class="animal-info">
+                                    <strong>{{ animal.nombre }}</strong>
+                                    <br>
+                                    Especie: {{ animal.especie }}
+                                    <br>
+                                    Edad: {{ animal.edad }}
+                                </div>
+                                <hr class="my-1">
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <a href="{% url 'edicionPersonaAnimal' persona.id %}" class="btn btn-info btn-sm">Editar</a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -133,30 +129,76 @@
     </div>
 </div>
 
-<script>
-function applyFilters() {
-    const searchText = document.getElementById('searchInput').value.toLowerCase();
-    const searchColumn = document.getElementById('searchColumn').value;
-    const filterText = document.getElementById('filterInput').value.toLowerCase();
-    const filterColumn = document.getElementById('filterColumn').value;
-    const rows = document.getElementsByClassName('persona-row');
-    
-    Array.from(rows).forEach(row => {
-        const searchCell = row.getElementsByTagName('td')[searchColumn];
-        const filterCell = row.getElementsByTagName('td')[filterColumn];
-        const searchValue = searchCell.textContent || searchCell.innerText;
-        const filterValue = filterCell.textContent || filterCell.innerText;
-        
-        if (searchValue.toLowerCase().indexOf(searchText) > -1 && filterValue.toLowerCase().indexOf(filterText) > -1) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
-    });
-}
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label for="personaFilter">Filtrar Personas:</label>
+        <select id="personaFilter" class="form-select">
+            <option value="1">Nombre</option>
+            <option value="2">Apellidos</option>
+            <option value="3">Edad</option>
+            <option value="4">Email</option>
+        </select>
+        <input type="text" id="personaInput" class="form-control" placeholder="Buscar persona...">
+    </div>
+    <div class="col-md-6">
+        <label for="animalFilter">Filtrar Animales:</label>
+        <select id="animalFilter" class="form-select">
+            <option value="1">Nombre</option>
+            <option value="2">Especie</option>
+            <option value="3">Edad</option>
+        </select>
+        <input type="text" id="animalInput" class="form-control" placeholder="Buscar animal...">
+    </div>
+</div>
 
-document.getElementById('searchInput').addEventListener('keyup', applyFilters);
-document.getElementById('filterInput').addEventListener('keyup', applyFilters);
+<script>
+ let currentPage = 1;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const entriesSelect = document.getElementById('entriesSelect');
+    const personaInput = document.getElementById('personaInput');
+    const animalInput = document.getElementById('animalInput');
+    
+    function applyFilters() {
+        const personaText = personaInput.value.toLowerCase();
+        const animalText = animalInput.value.toLowerCase();
+        const rows = document.querySelectorAll('.persona-row');
+        
+        rows.forEach(row => {
+            const personaData = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+            const animalData = row.querySelector('.animal-info')?.textContent.toLowerCase() || '';
+            
+            const matchPersona = personaText === '' || personaData.includes(personaText);
+            const matchAnimal = animalText === '' || animalData.includes(animalText);
+            
+            row.style.display = (matchPersona && matchAnimal) ? '' : 'none';
+        });
+        
+        updatePagination();
+    }
+    
+    function updatePagination() {
+        const rowsPerPage = parseInt(entriesSelect.value);
+        const visibleRows = Array.from(document.querySelectorAll('.persona-row'))
+                                .filter(row => row.style.display !== 'none');
+        
+        visibleRows.forEach((row, index) => {
+            row.style.display = index < rowsPerPage ? '' : 'none';
+        });
+        
+        document.getElementById('startIndex').textContent = visibleRows.length ? '1' : '0';
+        document.getElementById('endIndex').textContent = Math.min(rowsPerPage, visibleRows.length);
+        document.getElementById('totalItems').textContent = visibleRows.length;
+    }
+    
+    entriesSelect.addEventListener('change', updatePagination);
+    personaInput.addEventListener('input', applyFilters);
+    animalInput.addEventListener('input', applyFilters);
+    
+    // Inicializar
+    entriesSelect.value = '5';
+    updatePagination();
+});
 </script>
 
 <script>
@@ -173,7 +215,8 @@ document.getElementById('downloadVisibleButton').addEventListener('click', funct
                 cells[1].textContent.trim(), // Nombre
                 cells[2].textContent.trim(), // Apellidos
                 cells[3].textContent.trim(), // Edad
-                cells[4].textContent.trim()  // Email
+                cells[4].textContent.trim(),  // Email
+                cells[5].textContent.trim()  // Animales a Cargo
             ];
             csvContent += rowData.join(",") + "\n";
         }
@@ -200,7 +243,8 @@ document.getElementById('downloadAllButton').addEventListener('click', function(
             cells[1].textContent.trim(), // Nombre
             cells[2].textContent.trim(), // Apellidos
             cells[3].textContent.trim(), // Edad
-            cells[4].textContent.trim()  // Email
+            cells[4].textContent.trim(),  // Email
+            cells[5].textContent.trim()  // Animales a Cargo
         ];
         csvContent += rowData.join(",") + "\n";
     });
@@ -212,66 +256,6 @@ document.getElementById('downloadAllButton').addEventListener('click', function(
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-});
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const rows = document.querySelectorAll('.persona-row');
-    const entriesSelect = document.getElementById('entriesSelect');
-    const prevButton = document.getElementById('prevPage');
-    const nextButton = document.getElementById('nextPage');
-    const startIndexSpan = document.getElementById('startIndex');
-    const endIndexSpan = document.getElementById('endIndex');
-    const totalItemsSpan = document.getElementById('totalItems');
-    
-    let currentPage = 1;
-    let rowsPerPage = parseInt(entriesSelect.value); // Inicializar con el valor seleccionado
-
-    function updatePagination() {
-        const totalRows = rows.length;
-        const totalPages = Math.ceil(totalRows / rowsPerPage);
-        const startIndex = (currentPage - 1) * rowsPerPage;
-        const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
-        
-        rows.forEach((row, index) => {
-            if (index >= startIndex && index < endIndex) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
-        
-        prevButton.disabled = currentPage === 1;
-        nextButton.disabled = currentPage === totalPages;
-        
-        startIndexSpan.textContent = startIndex + 1;
-        endIndexSpan.textContent = endIndex;
-        totalItemsSpan.textContent = totalRows;
-    }
-    
-    entriesSelect.addEventListener('change', function() {
-        rowsPerPage = parseInt(this.value);
-        currentPage = 1;
-        updatePagination();
-    });
-    
-    prevButton.addEventListener('click', function() {
-        if (currentPage > 1) {
-            currentPage--;
-            updatePagination();
-        }
-    });
-    
-    nextButton.addEventListener('click', function() {
-        const totalPages = Math.ceil(rows.length / rowsPerPage);
-        if (currentPage < totalPages) {
-            currentPage++;
-            updatePagination();
-        }
-    });
-    
-    updatePagination(); // Llamar a la función para inicializar la paginación
 });
 </script>
 

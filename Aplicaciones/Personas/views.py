@@ -12,6 +12,7 @@ import logging
 from psycopg2.extensions import AsIs, quote_ident
 from django.template.response import TemplateResponse
 
+
 logger = logging.getLogger(__name__)
 
 # Create your views here.
@@ -22,10 +23,6 @@ def home(request):
     storage = messages.get_messages(request)
     storage.used = True
     return render(request, "gestionPersonas.html", {"personas": personasLista})
-
-# views.py
-from django.shortcuts import render
-from .models import Animal
 
 def listar_animales(request):
     animales = Animal.objects.all()  # Obtener todos los animales
@@ -96,26 +93,31 @@ def registrarAnimal(request):
     especie = smart_capitalize(request.POST['txtEspecie'])
     edad = request.POST['numEdad']
     mantenedor = smart_capitalize(request.POST['txtMantenedor'])
+    mantenedor_apellido = smart_capitalize(request.POST['txtMantenedorApellido'])
 
     animal = Animal.objects.create(
         nombre=nombre,
         especie=especie,
         edad=edad,
-        mantenedor=mantenedor
+        mantenedor=mantenedor,
+        mantenedor_apellido=mantenedor_apellido
     )
 
     messages.success(request, 'Animal añadido exitosamente.')
     return redirect('animales')
 
-def edicionPersona(request, id):
+def edicionPersona2(request, id):
     persona = Personas.objects.get(id=id)
+    def smart_capitalize(text):
+        words = text.split()
+        return ' '.join(word if any(c.isupper() for c in word) else word.capitalize() for word in words)
     
     if request.method == 'POST':
         # Actualizar la persona con los datos del formulario
-        persona.nombre = request.POST.get('nombre')
-        persona.apellidos = request.POST.get('apellidos')
-        persona.edad = request.POST.get('edad')
-        persona.email = request.POST.get('email')
+        persona.nombre = smart_capitalize(request.POST.get('txtNombre'))
+        persona.apellidos = smart_capitalize(request.POST.get('txtApellidos'))
+        persona.edad = request.POST.get('numEdad')
+        persona.email = request.POST.get('txtEmail')
         persona.save()
         
         # Redirigir a la página de origen
@@ -151,28 +153,31 @@ def editarPersona(request):
     persona.save()
 
     messages.success(request, '¡Persona actualizada!')
-    return redirect('home')
+    return redirect('gestionPersonas')
 
 def editarAnimal(request):
     def smart_capitalize(text):
         words = text.split()
         return ' '.join(word if any(c.isupper() for c in word) else word.capitalize() for word in words)
     
-    id = request.POST['numID']
-    nombre = smart_capitalize(request.POST['txtNombre'])
-    especie = smart_capitalize(request.POST['txtEspecie'])
-    edad = request.POST['numEdad']
-    mantenedor = smart_capitalize(request.POST['txtMantenedor'])
-    
-    animal = Animal.objects.get(id=id)
-    animal.nombre = nombre
-    animal.especie = especie
-    animal.edad = edad
-    animal.mantenedor = mantenedor
-    animal.save()
+    if request.method == 'POST':
+        id = request.POST['numID']
+        nombre = smart_capitalize(request.POST['txtNombre'])
+        especie = smart_capitalize(request.POST['txtEspecie'])
+        edad = request.POST['numEdad']
+        mantenedor = smart_capitalize(request.POST['txtMantenedor'])
+        mantenedor_apellido = smart_capitalize(request.POST['txtMantenedorApellido'])
 
-    messages.success(request, "El animal ha sido editado con éxito.")
-    return redirect('animales')  # Aseguramos que redirija a la página de animales
+        animal = Animal.objects.get(id=id)
+        animal.nombre = nombre
+        animal.especie = especie
+        animal.edad = edad
+        animal.mantenedor = mantenedor
+        animal.mantenedor_apellido = mantenedor_apellido
+        animal.save()
+
+        messages.success(request, '¡Animal actualizado!')
+        return redirect('animales')
 
 def eliminacionPersona(request, id):
     persona = Personas.objects.get(id=id)
@@ -560,3 +565,58 @@ def listar_tablas_importadas(request):
         return render(request, 'listarTablasImportadas.html', {
             'tablas_por_tipo': tablas_por_tipo
         })
+
+def listar_mantenedores_animales(request):
+    # Obtener todas las personas
+    personas = Personas.objects.all()
+    # Obtener todos los animales
+    animales = Animal.objects.all()
+    
+    context = {
+        'personas': personas,
+        'animales': animales
+    }
+    return render(request, 'GestionPersonasPrueba.html', context)
+
+def edicion_persona_animal(request, id):
+    persona = Personas.objects.get(id=id)
+    animales = Animal.objects.filter(mantenedor=persona.nombre)
+    
+    context = {
+        'persona': persona,
+        'animales': animales,
+        'todas_especies': Animal.objects.values_list('especie', flat=True).distinct()
+    }
+    return render(request, 'edicionPersonaAnimal.html', context)
+
+def editarPersonaAnimal(request):
+    if request.method == 'POST':
+        
+        # Datos de la persona
+        persona_id = request.POST['persona_id']
+        persona = Personas.objects.get(id=persona_id)
+        persona.nombre = request.POST['nombre']
+        persona.apellidos = request.POST['apellidos']
+        persona.edad = request.POST['edad']
+        persona.email = request.POST['email']
+        persona.save()
+
+        # Actualizar animales existentes
+        animales_ids = request.POST.getlist('animal_id[]')
+        animales_nombres = request.POST.getlist('animal_nombre[]')
+        animales_especies = request.POST.getlist('animal_especie[]')
+        animales_edades = request.POST.getlist('animal_edad[]')
+
+        for i in range(len(animales_ids)):
+            if animales_ids[i]:  # Si existe el ID, actualizar
+                animal = Animal.objects.get(id=animales_ids[i])
+                animal.nombre = animales_nombres[i]
+                animal.especie = animales_especies[i]
+                animal.edad = animales_edades[i]
+                animal.mantenedor = persona.nombre
+                animal.save()
+
+        messages.success(request, '¡Datos actualizados correctamente!')
+        return redirect('gestionPersonasPrueba')
+
+    return redirect('gestionPersonasPrueba')

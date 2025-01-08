@@ -5,7 +5,7 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('personas/', views.home, name='home'),
     path('registrarPersona/', views.registrarPersona, name='registrarPersona'),
-    path('edicionPersona/<id>', views.edicionPersona, name='edicionPersona'),
+    path('edicionPersona2/<id>', views.edicionPersona2, name='edicionPersona2'),
     path('editarPersona/', views.editarPersona, name='editarPersona'),
     path('eliminacionPersona/<id>', views.eliminacionPersona, name='eliminacionPersona'),
 
@@ -25,10 +25,12 @@ urlpatterns = [
     path('ver-datos/', views.ver_datos_importados, name='ver_datos_importados'),
     
     path('gestionPersonas/', views.gestion_personas, name='gestionPersonas'),
-    path('gestionPersonasPrueba/', views.gestion_personas_prueba, name='gestionPersonasPrueba'),
+    path('gestionPersonasPrueba/', views.listar_mantenedores_animales, name='gestionPersonasPrueba'),
     path('edicionPersona/<int:id>/', views.edicion_persona, name='edicionPersona'),
     path('listarTablasImportadas/', views.listar_tablas_importadas, name='listarTablasImportadas'),
     path('verDatosTabla/<str:nombre_tabla>/', views.ver_datos_tabla, name='verDatosTabla'),
+    path('edicionPersonaAnimal/<int:id>/', views.edicion_persona_animal, name='edicionPersonaAnimal'),
+    path('editarPersonaAnimal/', views.editarPersonaAnimal, name='editarPersonaAnimal'),
 ]
 
     

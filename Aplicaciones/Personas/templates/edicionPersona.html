@@ -46,7 +46,7 @@
         {% endif %}
         <div class="card">
             <div class="card-body">
-                <form action="{% url 'edicionPersona' persona.id %}" method="POST">
+                <form action="{% url 'edicionPersona2' persona.id %}" method="POST">
                     {% csrf_token %}
                     <input type="hidden" name="source" value="{{ source }}">
                     <div class="form-group">
