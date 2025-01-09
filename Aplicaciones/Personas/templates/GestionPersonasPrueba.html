@@ -50,30 +50,25 @@
 </div>
 
 <div class="row">
-    <div class="col-sm-12 col-md-6 col-lg-4 col-xl-4">
-        <h2>Gestión de Personas y Animales</h2>
-    </div>
-
-    <div class="col-sm-12 col-md-6 col-lg-8 col-xl-8">
+    <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h1 class="mb-0">Listado de Personas y Animales</h1>
-            <div class="form-group mb-3">
-                <label for="entriesSelect" class="me-2">Mostrar:</label>
-                <select id="entriesSelect" class="form-select form-select-sm" style="width: auto; display: inline-block;">
-                    <option value="5" selected>5</option>
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>
-            </div>
-            <div class="btn-group">
+            <div class="btn-group ms-auto">
                 <button id="downloadVisibleButton" class="btn btn-sm btn-primary">Descargar Visible</button>
                 <button id="downloadAllButton" class="btn btn-sm btn-secondary">Descargar Todo</button>
             </div>
         </div>
+        <div class="d-flex justify-content-end mb-2">
+            <label for="rowLimit" class="me-2">Mostrar:</label>
+            <select id="rowLimit" class="form-select form-select-sm w-auto">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="25"selected>25</option>
+                <option value="100">100</option>
+            </select>
+        </div>
         <div class="table-responsive py-2">
-            <table class="table table-striped">
+            <table class="table table-striped w-100">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -114,17 +109,6 @@
                     {% endfor %}
                 </tbody>
             </table>
-
-            <!-- Controles de paginación -->
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <div>
-                    Mostrando <span id="startIndex">1</span> a <span id="endIndex">5</span> de <span id="totalItems">{{ personas.count }}</span> registros
-                </div>
-                <div>
-                    <button id="prevPage" class="btn btn-secondary me-2" disabled>&laquo; Anterior</button>
-                    <button id="nextPage" class="btn btn-secondary">Siguiente &raquo;</button>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -152,111 +136,139 @@
 </div>
 
 <script>
- let currentPage = 1;
-
 document.addEventListener('DOMContentLoaded', function() {
-    const entriesSelect = document.getElementById('entriesSelect');
     const personaInput = document.getElementById('personaInput');
     const animalInput = document.getElementById('animalInput');
-    
+    const personaFilter = document.getElementById('personaFilter');
+    const animalFilter = document.getElementById('animalFilter');
+    const rowLimit = document.getElementById('rowLimit');
+    const rows = document.querySelectorAll('.persona-row');
+
     function applyFilters() {
         const personaText = personaInput.value.toLowerCase();
         const animalText = animalInput.value.toLowerCase();
-        const rows = document.querySelectorAll('.persona-row');
-        
+        const personaColumnIndex = parseInt(personaFilter.value);
+        const animalColumnIndex = parseInt(animalFilter.value);
+
+        let visibleCount = 0;
+        const limit = parseInt(rowLimit.value);
+
         rows.forEach(row => {
-            const personaData = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
-            const animalData = row.querySelector('.animal-info')?.textContent.toLowerCase() || '';
-            
-            const matchPersona = personaText === '' || personaData.includes(personaText);
-            const matchAnimal = animalText === '' || animalData.includes(animalText);
-            
-            row.style.display = (matchPersona && matchAnimal) ? '' : 'none';
+            const personaMatch = personaText === "" || row.cells[personaColumnIndex].textContent.toLowerCase().includes(personaText);
+            const animalMatch = animalText === "" || Array.from(row.querySelectorAll('.animal-info')).some(info => info.textContent.toLowerCase().includes(animalText));
+            if (personaMatch && animalMatch && visibleCount < limit) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
         });
-        
-        updatePagination();
     }
-    
-    function updatePagination() {
-        const rowsPerPage = parseInt(entriesSelect.value);
-        const visibleRows = Array.from(document.querySelectorAll('.persona-row'))
-                                .filter(row => row.style.display !== 'none');
-        
-        visibleRows.forEach((row, index) => {
-            row.style.display = index < rowsPerPage ? '' : 'none';
+
+    personaInput.addEventListener('keyup', applyFilters);
+    animalInput.addEventListener('keyup', applyFilters);
+    personaFilter.addEventListener('change', applyFilters);
+    animalFilter.addEventListener('change', applyFilters);
+    rowLimit.addEventListener('change', applyFilters);
+
+    document.getElementById('downloadVisibleButton').addEventListener('click', function() {
+        let csvContent = "data:text/csv;charset=utf-8,ID,Nombre,Apellidos,Edad,Email,Animales a Cargo\n";
+        rows.forEach(row => {
+            if (row.style.display !== 'none') {
+                const cells = row.querySelectorAll('td');
+                const animalInfo = Array.from(row.querySelectorAll('.animal-info')).map(info => info.textContent.trim().replace(/\n/g, ' ')).join('; ');
+                const rowData = [
+                    cells[0].textContent.trim(),
+                    cells[1].textContent.trim(),
+                    cells[2].textContent.trim(),
+                    cells[3].textContent.trim(),
+                    cells[4].textContent.trim(),
+                    animalInfo
+                ];
+                csvContent += rowData.join(",") + "\n";
+            }
         });
-        
-        document.getElementById('startIndex').textContent = visibleRows.length ? '1' : '0';
-        document.getElementById('endIndex').textContent = Math.min(rowsPerPage, visibleRows.length);
-        document.getElementById('totalItems').textContent = visibleRows.length;
-    }
-    
-    entriesSelect.addEventListener('change', updatePagination);
-    personaInput.addEventListener('input', applyFilters);
-    animalInput.addEventListener('input', applyFilters);
-    
-    // Inicializar
-    entriesSelect.value = '5';
-    updatePagination();
-});
-</script>
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "personas_visibles.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
 
-<script>
-document.getElementById('downloadVisibleButton').addEventListener('click', function() {
-    const rows = document.querySelectorAll('.persona-row');
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "ID,Nombre,Apellidos,Edad,Email\n"; // Encabezados
-
-    rows.forEach(row => {
-        if (row.style.display !== 'none') { // Solo incluir filas visibles
+    document.getElementById('downloadAllButton').addEventListener('click', function() {
+        let csvContent = "data:text/csv;charset=utf-8,ID,Nombre,Apellidos,Edad,Email,Animales a Cargo\n";
+        rows.forEach(row => {
             const cells = row.querySelectorAll('td');
+            const animalInfo = Array.from(row.querySelectorAll('.animal-info')).map(info => info.textContent.trim().replace(/\n/g, ' ')).join('; ');
             const rowData = [
-                cells[0].textContent.trim(), // ID
-                cells[1].textContent.trim(), // Nombre
-                cells[2].textContent.trim(), // Apellidos
-                cells[3].textContent.trim(), // Edad
-                cells[4].textContent.trim(),  // Email
-                cells[5].textContent.trim()  // Animales a Cargo
+                cells[0].textContent.trim(),
+                cells[1].textContent.trim(),
+                cells[2].textContent.trim(),
+                cells[3].textContent.trim(),
+                cells[4].textContent.trim(),
+                animalInfo
             ];
             csvContent += rowData.join(",") + "\n";
-        }
+        });
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "personas_todas.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+    document.getElementById('downloadVisibleButton').addEventListener('click', function() {
+        let csvContent = "data:text/csv;charset=utf-8,ID,Nombre,Apellidos,Edad,Email,Animales a Cargo\n";
+        rows.forEach(row => {
+            if (row.style.display !== 'none') {
+                const cells = row.querySelectorAll('td');
+                const animalInfo = Array.from(row.querySelectorAll('.animal-info')).map(info => info.textContent.trim().replace(/\n/g, ' ')).join('; ');
+                const rowData = [
+                    cells[0].textContent.trim(),
+                    cells[1].textContent.trim(),
+                    cells[2].textContent.trim(),
+                    cells[3].textContent.trim(),
+                    cells[4].textContent.trim(),
+                    animalInfo
+                ];
+                csvContent += rowData.join(",") + "\n";
+            }
+        });
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "personas_visibles.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     });
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "personas_visibles.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-});
-
-document.getElementById('downloadAllButton').addEventListener('click', function() {
-    const rows = document.querySelectorAll('.persona-row');
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "ID,Nombre,Apellidos,Edad,Email\n"; // Encabezados
-
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        const rowData = [
-            cells[0].textContent.trim(), // ID
-            cells[1].textContent.trim(), // Nombre
-            cells[2].textContent.trim(), // Apellidos
-            cells[3].textContent.trim(), // Edad
-            cells[4].textContent.trim(),  // Email
-            cells[5].textContent.trim()  // Animales a Cargo
-        ];
-        csvContent += rowData.join(",") + "\n";
+    document.getElementById('downloadAllButton').addEventListener('click', function() {
+        let csvContent = "data:text/csv;charset=utf-8,ID,Nombre,Apellidos,Edad,Email,Animales a Cargo\n";
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            const animalInfo = Array.from(row.querySelectorAll('.animal-info')).map(info => info.textContent.trim().replace(/\n/g, ' ')).join('; ');
+            const rowData = [
+                cells[0].textContent.trim(),
+                cells[1].textContent.trim(),
+                cells[2].textContent.trim(),
+                cells[3].textContent.trim(),
+                cells[4].textContent.trim(),
+                animalInfo
+            ];
+            csvContent += rowData.join(",") + "\n";
+        });
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "personas_todas.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "personas_todas.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
 });
 </script>
-
 {% endblock %} 

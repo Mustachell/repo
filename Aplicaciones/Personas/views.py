@@ -9,7 +9,6 @@ from django.core.paginator import Paginator
 from django.db import connection
 from urllib.parse import unquote
 import logging
-from psycopg2.extensions import AsIs, quote_ident
 from django.template.response import TemplateResponse
 
 
@@ -26,8 +25,8 @@ def home(request):
 
 def listar_animales(request):
     animales = Animal.objects.all()  # Obtener todos los animales
-    print(animales)  # Verificar que los datos son correctos
-    return render(request, 'animales.html', {'animales': animales})  # Pasar los animales al template
+    personas = Personas.objects.all()  # Obtener todas las personas
+    return render(request, 'animales.html', {'animales': animales, 'personas': personas})
 
 
 
@@ -620,3 +619,58 @@ def editarPersonaAnimal(request):
         return redirect('gestionPersonasPrueba')
 
     return redirect('gestionPersonasPrueba')
+
+def registrarAnimalPersonaExistente(request):
+    if request.method == 'POST':
+        persona_id = request.POST.get('personaExistente')
+        nombre_mascota = request.POST.get('txtNombreMascota')
+        especie = request.POST.get('txtEspecieMascota')
+        edad = request.POST.get('numEdadMascota')
+        
+        try:
+            persona = Personas.objects.get(id=persona_id)
+            animal = Animal.objects.create(
+                nombre=nombre_mascota,
+                especie=especie,
+                edad=edad,
+                mantenedor=persona.nombre,
+                mantenedor_apellido=persona.apellidos
+            )
+            messages.success(request, '¡Animal registrado correctamente!')
+        except Exception as e:
+            messages.error(request, 'Error al registrar el animal')
+        
+        return redirect('animales')
+
+def animales(request):
+    animales = Animal.objects.all()
+    personas = Personas.objects.all()  # Asegúrate de que el modelo se llame correctamente
+    return render(request, "animales.html", {
+        'animales': animales,
+        'personas': personas
+    })
+
+def listar_contenedores_tablas(request):
+    with connection.cursor() as cursor:
+        # Obtener todas las tablas importadas
+        cursor.execute("""
+            SELECT tablename 
+            FROM pg_tables 
+            WHERE schemaname = 'public' 
+            AND tablename NOT IN (
+                'django_migrations',
+                'auth_user',
+                'django_session',
+                'django_content_type',
+                'auth_permission',
+                'auth_group',
+                'auth_group_permissions',
+                'django_admin_log',
+                'auth_user_groups',
+                'auth_user_user_permissions'
+            )
+            ORDER BY tablename;
+        """)
+        tablas = [row[0] for row in cursor.fetchall()]
+
+    return render(request, 'contenedores_tablas.html', {'tablas': tablas})

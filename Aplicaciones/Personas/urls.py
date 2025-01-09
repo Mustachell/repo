@@ -31,6 +31,8 @@ urlpatterns = [
     path('verDatosTabla/<str:nombre_tabla>/', views.ver_datos_tabla, name='verDatosTabla'),
     path('edicionPersonaAnimal/<int:id>/', views.edicion_persona_animal, name='edicionPersonaAnimal'),
     path('editarPersonaAnimal/', views.editarPersonaAnimal, name='editarPersonaAnimal'),
+    path('registrarAnimalPersonaExistente/', views.registrarAnimalPersonaExistente, name='registrarAnimalPersonaExistente'),
+    path('contenedoresTablas/', views.listar_contenedores_tablas, name='contenedoresTablas'),
 ]
 
     

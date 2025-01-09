@@ -44,6 +44,9 @@
                             <span class="ms-2">registros</span>
                         </div>
                         <div class="d-flex align-items-center">
+                            <select class="form-select form-select-sm w-auto" id="columnSelect">
+                                <option value="all">Todas las columnas</option>
+                            </select>
                             <input type="text" 
                                    class="form-control form-control-sm" 
                                    id="searchInput" 
@@ -149,6 +152,22 @@ document.addEventListener('DOMContentLoaded', function() {
             updatePagination();
         }
     });
+
+    const searchInput = document.getElementById('searchInput');
+    const columnSelect = document.getElementById('columnSelect');
+
+    function filterTable() {
+        const searchText = searchInput.value.toLowerCase();
+        const rows = document.querySelectorAll('table tbody tr');
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            const rowText = Array.from(cells).map(cell => cell.textContent.toLowerCase()).join(' ');
+            row.style.display = rowText.includes(searchText) ? '' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('keyup', filterTable);
 });
 
 function updatePagination() {

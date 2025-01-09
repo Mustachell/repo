@@ -50,11 +50,13 @@
     </div>
 </div>
 
-<div class="row align-items-start">
-    <div class="col-sm-12 col-md-6 col-lg-4 col-xl-4">
-        <h2>Gestador de Animales</h2>
-        <div class="card">
+<div class="row">
+    <!-- Columna izquierda -->
+    <div class="col-md-4">
+        <!-- Gestador de Animales original -->
+        <div class="card mb-4">
             <div class="card-body">
+                <h2>Gestador de Animales</h2>
                 <form action="/registrarAnimal/" method="POST">{% csrf_token %}
                     <div class="form-group">
                         <input type="text" id="txtNombre" name="txtNombre" 
@@ -110,9 +112,73 @@
                 </form>
             </div>
         </div>
+
+        <!-- Registro con Persona Existente -->
+        <div class="card">
+            <div class="card-body">
+                <h2>Registro con Persona Existente</h2>
+                <form action="{% url 'registrarAnimalPersonaExistente' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <select name="personaExistente" class="form-control" required>
+                            <option value="">Seleccione una persona</option>
+                            {% for persona in personas %}
+                                <option value="{{ persona.id }}" data-nombre="{{ persona.nombre }}" data-apellidos="{{ persona.apellidos }}">
+                                    {{ persona.nombre }} {{ persona.apellidos }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="txtNombreMascota" name="txtNombreMascota" 
+                               class="form-control" placeholder="Nombre Mascota" required>
+                    </div>
+                    <div class="form-group">
+                        <select id="txtEspecieMascota" name="txtEspecieMascota" class="form-control" required>
+                            <option value="" disabled selected>Seleccione una especie</option>
+                            <optgroup label="Mamíferos">
+                                <option value="Perro">Perro</option>
+                                <option value="Gato">Gato</option>
+                                <option value="Ratón">Ratón</option>
+                                <option value="León">León</option>
+                                <option value="Tigre">Tigre</option>
+                                <option value="Elefante">Elefante</option>
+                                <option value="Jirafa">Jirafa</option>
+                                <option value="Mono">Mono</option>
+                                <option value="Koala">Koala</option>
+                                <option value="Canguro">Canguro</option>
+                                <option value="Delfín">Delfín</option>
+                                <option value="Oso">Oso</option>
+                            </optgroup>
+                            <optgroup label="Aves">
+                                <option value="Pingüino">Pingüino</option>
+                                <option value="Águila">Águila</option>
+                                <option value="Loro">Loro</option>
+                                <option value="Búho">Búho</option>
+                                <option value="Flamingo">Flamingo</option>
+                                <option value="Zorzal">Zorzal</option>
+                            </optgroup>
+                            <optgroup label="Reptiles">
+                                <option value="Tortuga">Tortuga</option>
+                                <option value="Iguana">Iguana</option>
+                                <option value="Serpiente">Serpiente</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="numEdadMascota" name="numEdadMascota" 
+                               class="form-control" placeholder="Edad Mascota" required>
+                    </div>
+                    <div class="form-group d-grid">
+                        <button type="submit" class="btn btn-success">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
-    <div class="col-sm-12 col-md-6 col-lg-8 col-xl-8">
+    <!-- Columna derecha - Tabla -->
+    <div class="col-md-8">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h1 class="mb-0">Listado de Animales</h1>
             <div class="input-group" style="width: 300px;">
@@ -185,7 +251,7 @@
 <script>
     // Función de confirmación antes de eliminar
     function confirmDelete() {
-        return confirm("¿Estás seguro de que deseas eliminar esta persona?");
+        return confirm("¿Estás seguro de que deseas eliminar esta mascota?");
     }
   </script>
   
@@ -277,6 +343,20 @@ document.getElementById('searchInput').addEventListener('keyup', function() {
         }
     });
 });
+</script>
+  
+<script>
+function actualizarDatosPersona() {
+    const select = document.querySelector('select[name="personaExistente"]');
+    const nombreInput = document.getElementById('nombrePersona');
+    const apellidoInput = document.getElementById('apellidoPersona');
+    const selectedOption = select.options[select.selectedIndex];
+    
+    nombreInput.value = selectedOption.dataset.nombre;
+    apellidoInput.value = selectedOption.dataset.apellidos;
+}
+
+document.querySelector('select[name="personaExistente"]').addEventListener('change', actualizarDatosPersona);
 </script>
   
   {% endblock %}

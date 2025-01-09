@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Contenedores de Tablas{% endblock %}
+
+{% block body %}
+<div class="container py-5">
+    <h1 class="mb-4">Contenedores de Tablas Importadas</h1>
+    
+    <!-- Campo de búsqueda -->
+    <div class="mb-4">
+        <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre de tabla...">
+    </div>
+
+    <div class="row" id="tableContainer">
+        {% for tabla in tablas %}
+        <div class="col-md-4 mb-4 table-card">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ tabla }}</h3>
+                    <p class="card-text">Contenedor para la tabla {{ tabla }}.</p>
+                    <a href="{% url 'verDatosTabla' tabla %}" class="btn btn-primary">Ver Datos</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        var input = this.value.toLowerCase();
+        var cards = document.getElementsByClassName('table-card');
+
+        for (var i = 0; i < cards.length; i++) {
+            var cardTitle = cards[i].getElementsByClassName('card-title')[0].innerText.toLowerCase();
+            if (cardTitle.includes(input)) {
+                cards[i].style.display = '';
+            } else {
+                cards[i].style.display = 'none';
+            }
+        }
+    });
+</script>
+{% endblock %} 

@@ -12,6 +12,23 @@
         </div>
     </div>
 
+    <!-- Contenedor para cada tabla importada -->
+    {% for tipo, tablas in tablas_por_tipo.items %}
+        {% for tabla in tablas %}
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h3 class="card-title">{{ tabla }}</h3>
+                            <p class="card-text">Visualiza los datos de la tabla {{ tabla }}.</p>
+                            <a href="{% url 'verDatosTabla' tabla %}" class="btn btn-primary">Ver Tabla</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
     <div class="row justify-content-center g-4">
         <!-- Tarjeta para Personas -->
         <div class="col-md-4">
@@ -67,12 +84,13 @@
           </div>
         </div>
 
+        <!-- Nueva funcionalidad para listar contenedores de tablas -->
         <div class="col-md-3">
             <div class="card h-100">
                 <div class="card-body text-center">
-                    <h3 class="card-title">Ver tablas importadas</h3>
-             <p class="card-text">Ver las tablas importadas.</p>
-                    <a href="{% url 'listarTablasImportadas' %}" class="btn btn-primary">Ir a Tablas</a>
+                    <h3 class="card-title">Contenedores de Tablas</h3>
+                    <p class="card-text">Ver contenedores de tablas importadas.</p>
+                    <a href="{% url 'contenedoresTablas' %}" class="btn btn-primary">Ir a Contenedores</a>
                 </div>
             </div>
         </div>
