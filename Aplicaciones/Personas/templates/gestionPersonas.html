@@ -52,41 +52,19 @@
 <div class="row">
     <div class="col-sm-12 col-md-6 col-lg-4 col-xl-4">
         <h2>Gestión de Personas</h2>
-        <div class="card">
             <div class="card-body">
-                <form action="{% url 'registrarPersona' %}" method="POST">{% csrf_token %}
-                    <div class="form-group">
-                        <input type="text" id="txtNombre" name="txtNombre" class="form-control" placeholder="Nombre"
-                            maxlength="50" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="text" id="txtApellidos" name="txtApellidos" class="form-control"
-                            placeholder="Apellidos" maxlength="50" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="number" id="numEdad" name="numEdad" class="form-control" placeholder="Edad"
-                         required>
-                    </div>
-                    <div class="form-group">
-                        <input type="email" id="txtEmail" name="txtEmail" class="form-control" 
-                               placeholder="Email" maxlength="50" required 
-                               pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
-                    </div>
-                    <div class="form-group">
-                        <button type="submit" class="btn btn-success btn-block text-white">Guardar</button>
-                    </div>
-                </form>
-            </div>
         </div>
+    </div>
 
         <!-- Nuevo filtro basado en columna -->
         <div class="form-group mt-3">
             <label for="filterColumn" class="me-2">Filtrar por columna:</label>
             <select id="filterColumn" class="form-select form-select-sm" style="width: auto; display: inline-block;">
                 <option value="1">Nombre</option>
-                <option value="2">Apellidos</option>
+                <option value="2">Localidad</option>
                 <option value="3">Edad</option>
-                <option value="4">Email</option>
+                <option value="4">Nacionalidad</option>
+                <option value="5">Coordenadas</option>
             </select>
             <input type="text" id="filterInput" class="form-control" placeholder="Filtrar...">
         </div>
@@ -96,11 +74,13 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h1 class="mb-0">Listado de Personas</h1>
             <div class="input-group" style="width: 300px;">
+                
                 <select id="searchColumn" class="form-select flex-grow-0" style="width: auto;">
                     <option value="1">Nombre</option>
-                    <option value="2">Apellidos</option>
+                    <option value="2">Localidad</option>
                     <option value="3">Edad</option>
-                    <option value="4">Email</option>
+                    <option value="4">Nacionalidad</option>
+                    <option value="5">Coordenadas</option>
                 </select>
                 <input type="text" id="searchInput" class="form-control" placeholder="Buscar...">
             </div>
@@ -119,38 +99,49 @@
                 <button id="downloadAllButton" class="btn btn-sm btn-secondary">Descargar Todo</button>
             </div>
         </div>
+
+        
         <div class="table-responsive py-2">
             <table class="table table-striped text-center">
                 <thead>
                     <tr>
                         <th>#</th>
                         <th>Nombre</th>
-                        <th>Apellidos</th>
+                        <th>Especie</th>
                         <th>Edad</th>
-                        <th>Email</th>
-                        <th colspan="2">Opciones</th>
+                        <th>Mantenedor</th>
+                        <th>Apellido Mantenedor</th>
+                        <th colspan="2">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for p in personas %}
+                    {% for p in Personas %}
                     <tr class="persona-row">
                         <td>{{ forloop.counter }}</td>
                         <td>{{ p.nombre }}</td>
-                        <td>{{ p.apellidos }}</td>
+                        <td>{{ p.localidad }}</td>
                         <td>{{ p.edad }}</td>
-                        <td>{{ p.email }}</td>
-                        <td><a href="/edicionPersona2/{{ p.id }}" class="btn btn-info">Editar</a></td>
-                        <td><a href="/eliminacionPersona/{{ p.id }}" class="btn btn-danger"
-                        onclick="return confirmDelete();">Eliminar</a></td>
+                        <td>{{ p.nacionalidad }}</td>
+                        <td>{{ p.coordenadas }}</td>
+                        <td>
+                            <a href="{% url 'edicionPersona' p.id %}" class="btn btn-warning">Editar</a>
+                            <a href="{% url 'eliminacionPersona' p.id %}" class="btn btn-danger">Eliminar</a>
+                        </td>
                     </tr>
-                    {% endfor %}
-                </tbody>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">No hay personas registradas.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </tbody>
+
             </table>
 
             <!-- Controles de paginación -->
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <div>
-                    Mostrando <span id="startIndex">1</span> a <span id="endIndex">5</span> de <span id="totalItems">{{ personas.count }}</span> registros
+                    Mostrando <span id="startIndex">1</span> a <span id="endIndex">5</span> de <span id="totalItems">{{ Personas.count }}</span> registros
                 </div>
                 <div>
                     <button id="prevPage" class="btn btn-secondary me-2" disabled>&laquo; Anterior</button>
@@ -275,7 +266,7 @@ document.getElementById('filterInput').addEventListener('keyup', applyFilters);
 document.getElementById('downloadVisibleButton').addEventListener('click', function() {
     const rows = document.querySelectorAll('.persona-row');
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "ID,Nombre,Apellidos,Edad,Email\n"; // Encabezados
+    csvContent += "ID,Nombre,Localidad,Edad,Nacionalidad,Coordenadas\n"; // Encabezados
 
     rows.forEach(row => {
         if (row.style.display !== 'none') { // Solo incluir filas visibles
@@ -283,9 +274,10 @@ document.getElementById('downloadVisibleButton').addEventListener('click', funct
             const rowData = [
                 cells[0].textContent.trim(), // ID
                 cells[1].textContent.trim(), // Nombre
-                cells[2].textContent.trim(), // Apellidos
+                cells[2].textContent.trim(), // Localidad
                 cells[3].textContent.trim(), // Edad
-                cells[4].textContent.trim()  // Email
+                cells[4].textContent.trim(), // Nacionalidad
+                cells[5].textContent.trim()  // Coordenadas
             ];
             csvContent += rowData.join(",") + "\n";
         }
@@ -303,16 +295,17 @@ document.getElementById('downloadVisibleButton').addEventListener('click', funct
 document.getElementById('downloadAllButton').addEventListener('click', function() {
     const rows = document.querySelectorAll('.persona-row');
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "ID,Nombre,Apellidos,Edad,Email\n"; // Encabezados
+    csvContent += "ID,Nombre,Localidad,Edad,Nacionalidad,Coordenadas\n"; // Encabezados
 
     rows.forEach(row => {
         const cells = row.querySelectorAll('td');
         const rowData = [
             cells[0].textContent.trim(), // ID
             cells[1].textContent.trim(), // Nombre
-            cells[2].textContent.trim(), // Apellidos
+            cells[2].textContent.trim(), // Localidad
             cells[3].textContent.trim(), // Edad
-            cells[4].textContent.trim()  // Email
+            cells[4].textContent.trim(), // Nacionalidad
+            cells[5].textContent.trim()  // Coordenadas
         ];
         csvContent += rowData.join(",") + "\n";
     });

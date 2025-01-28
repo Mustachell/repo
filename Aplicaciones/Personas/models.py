@@ -4,14 +4,16 @@ from django.db import models
 
 class Personas(models.Model):
     id = models.AutoField(primary_key=True)
-    nombre=models.CharField(max_length=20)
-    apellidos=models.CharField(max_length=20)
+    nombre = models.CharField(max_length=40)
+    localidad = models.CharField(max_length=40)
     edad = models.IntegerField()
-    email = models.EmailField(max_length=100)  # Nuevo campo de email
+    nacionalidad = models.CharField(max_length=40)
+    coordenadas = models.CharField(max_length=40)
+
     
     def __str__(self):
-       texto = "{0} {1} ({2})"
-       return texto.format(self.nombre, self.apellidos, self.email) 
+        texto = "{0} {1} ({2})"
+        return texto.format(self.nombre, self.localidad, self.edad)
 
 class Animal(models.Model):
     nombre = models.CharField(max_length=50)

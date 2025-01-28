@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Datos{% endblock %}
+
+{% block body %}
+<div class="container">
+    <h2>Editar Datos de {{ tabla_nombre }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {% for key, value in objeto.items %}
+            {% if key != 'id' %}
+                <div class="mb-3">
+                    <label for="{{ key }}" class="form-label">{{ key|title }}</label>
+                    <input type="text" class="form-control" id="{{ key }}" name="{{ key }}" value="{{ value }}">
+                </div>
+            {% else %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endif %}
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+    </form>
+</div>
+{% endblock %} 

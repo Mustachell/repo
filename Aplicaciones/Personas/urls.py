@@ -1,11 +1,11 @@
-from django.urls import path
+from django.urls import path, re_path
 from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
     path('personas/', views.home, name='home'),
     path('registrarPersona/', views.registrarPersona, name='registrarPersona'),
-    path('edicionPersona2/<id>', views.edicionPersona2, name='edicionPersona2'),
+    path('edicionPersona/<id>', views.edicionPersona2, name='edicionPersona'),
     path('editarPersona/', views.editarPersona, name='editarPersona'),
     path('eliminacionPersona/<id>', views.eliminacionPersona, name='eliminacionPersona'),
 
@@ -22,6 +22,7 @@ urlpatterns = [
     path('videojuegos/eliminacionVideojuego/<id>', views.eliminarVideojuego, name='eliminacionVideojuego'),
 
     path('importar/', views.importar_datos_txt, name='importar_personas'),
+    path('obtener-hojas-excel/', views.obtener_hojas_excel, name='obtener_hojas_excel'),
     path('ver-datos/', views.ver_datos_importados, name='ver_datos_importados'),
     
     path('gestionPersonas/', views.gestion_personas, name='gestionPersonas'),
@@ -33,6 +34,11 @@ urlpatterns = [
     path('editarPersonaAnimal/', views.editarPersonaAnimal, name='editarPersonaAnimal'),
     path('registrarAnimalPersonaExistente/', views.registrarAnimalPersonaExistente, name='registrarAnimalPersonaExistente'),
     path('contenedoresTablas/', views.listar_contenedores_tablas, name='contenedoresTablas'),
+    re_path(r'^editarDatos/(?P<tabla_nombre>[^/]+)/(?P<id>.+)/$', views.editar_datos, name='editar_datos'),
+    path('detectar-hojas/', views.detectar_hojas, name='detectar_hojas'),
+    path('backups/', views.ver_backups, name='ver_backups'),
+    path('backup/<str:nombre_backup>/', views.ver_datos_backup, name='ver_datos_backup'),
 ]
 
     
+
