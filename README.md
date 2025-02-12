@@ -1,5 +1,6 @@
 Caso ideal de uso de aplicacion de Gestor ly:
-1. Importar un archivo excel csv o xskx, o un archivo txt.}, en "Importar Datos"
+
+1. Importar un archivo excel csv o xskx, o un archivo txt en "Importar Datos"
 2. Elegir cantidad de hojas que uno requiera (maximo 7)
 3. Importar datos.
 4. Confirmar que tabla de datos fue importadas en "Ver Tablas Importadas"
