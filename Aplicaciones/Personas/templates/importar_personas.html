@@ -9,34 +9,148 @@
     </div>
     <div class="card-body">
         {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
+            <div id="message-container">
+                {% for message in messages|slice:":4" %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
         {% endif %}
 
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data" id="importForm">
             {% csrf_token %}
             <div class="mb-3">
                 <label for="file" class="form-label">Seleccionar archivo:</label>
-                <input type="file" class="form-control" id="file" name="file" 
-                       accept=".csv,.txt,.xls,.xlsx" required>
+                <input type="file" class="form-control" id="file" name="file" accept=".csv,.xlsx,.xls,.xlsb" required>
                 <div class="form-text">
                     Formatos soportados:
                     <ul class="mb-0">
-                        <li>CSV (separado por coma, punto y coma o pipe '|')</li>
-                        <li>Excel (.xls, .xlsx)</li>
-                        <li>Texto (.txt separado por '|')</li>
+                        <li>TXT (.txt) - Archivo de texto plano</li>
+                        <li>CSV (.csv) - Detecta automáticamente separadores comunes (coma, punto y coma, pipe '|', tabulador)</li>
+                        <li>Excel (.xlsx) - Formato Excel moderno (2007 en adelante)</li>
                     </ul>
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Importante:</strong> 
+                        <ul class="mb-0">
+                            <li>Se pueden procesar hasta una maximo de 7 hojas en formato excel xslx.</li>
+                            <li>Los datos vacíos o valores NA/NULL serán manejados automáticamente.</li>
+                            <li>Los datos se importan a la base de datos automaticamente.</li>
+                            <li>Se creará un backup de los datos importados no editable. El backup no se creara mas de 1 vez por importación.</li>
+                            <li>En caso de detectar una fila vacio en la columna del archivo durante la importación, fallara la importación.</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
+            <!-- Reemplazar el div del selector de hojas por esto -->
+            <div id="sheetSelector" style="display:none;" class="mb-3">
+                <label for="sheet" class="form-label">Seleccionar hojas (máximo 7):</label>
+                <div id="sheetCheckboxes">
+                    <!-- Las hojas se agregarán aquí -->
+                </div>
+            </div>
+
             <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary">
-                    Importar Datos
-                </button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">Importar Datos</button>
             </div>
         </form>
     </div>
 </div>
-{% endblock %} 
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Manejar el cierre de alertas
+        const messageContainer = document.getElementById('message-container');
+        if (messageContainer) {
+            messageContainer.addEventListener('click', function(e) {
+                if (e.target.classList.contains('btn-close')) {
+                    const alert = e.target.closest('.alert');
+                    if (alert) {
+                        alert.remove();
+                    }
+                }
+            });
+        }
+    });
+
+    document.getElementById('file').addEventListener('change', function() {
+        var fileInput = document.getElementById('file');
+        var sheetSelector = document.getElementById('sheetSelector');
+        var sheetCheckboxes = document.getElementById('sheetCheckboxes');
+        var formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        // Limpiar checkboxes existentes y eliminar TODOS los inputs hidden anteriores
+        sheetCheckboxes.innerHTML = '';
+        sheetSelector.style.display = 'none';
+        document.querySelectorAll('input[name="sheets[]"]').forEach(el => el.remove());
+
+        fetch("{% url 'detectar_hojas' %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.sheets && data.sheets.length > 0) {
+                // Solo mostrar selector si hay más de una hoja
+                if (data.sheets.length > 1) {
+                    data.sheets.forEach((sheet, index) => {
+                        const div = document.createElement('div');
+                        div.className = 'form-check';
+                        
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.className = 'form-check-input sheet-checkbox';
+                        checkbox.name = 'sheets[]';
+                        checkbox.value = sheet;
+                        checkbox.id = `sheet_${index}`;
+                        
+                        const label = document.createElement('label');
+                        label.className = 'form-check-label';
+                        label.htmlFor = `sheet_${index}`;
+                        label.textContent = sheet;
+                        
+                        div.appendChild(checkbox);
+                        div.appendChild(label);
+                        sheetCheckboxes.appendChild(div);
+                    });
+
+                    // Mostrar el selector solo si hay múltiples hojas
+                    sheetSelector.style.display = 'block';
+                } else {
+                    // Si solo hay una hoja, crear un input hidden
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'sheets[]';
+                    hiddenInput.value = data.sheets[0];
+                    document.getElementById('importForm').appendChild(hiddenInput);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+
+    // Validación del formulario
+    document.getElementById('importForm').addEventListener('submit', function(e) {
+        const sheetSelector = document.getElementById('sheetSelector');
+        // Solo validar si hay múltiples hojas y el selector está visible
+        if (sheetSelector.style.display === 'block') {
+            const checked = document.querySelectorAll('.sheet-checkbox:checked');
+            if (checked.length === 0) {
+                e.preventDefault();
+                alert('Por favor seleccione al menos una hoja.');
+                return false;
+            }
+        }
+        return true;
+    });
+</script>
+{% endblock %}

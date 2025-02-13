@@ -4,6 +4,13 @@
 <!-- Añadir Leaflet CSS y JS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+<!-- Añadir CSS para ocultar la columna id -->
+<style>
+    .id-column {
+        display: none; /* Ocultar columna de ID */
+    }
+</style>
 {% endblock %}
 
 {% block title %}Datos de {{ nombre_tabla }}{% endblock %}
@@ -19,10 +26,13 @@
             <div class="btn-group">
                 <button id="downloadVisibleButton" class="btn btn-sm btn-primary">Descargar Visible</button>
                 <button id="downloadAllButton" class="btn btn-sm btn-secondary">Descargar Todo</button>
+                <a href="{% url 'actualizar_orden_tabla' nombre_tabla %}" class="btn btn-sm btn-info">
+                    Ordenar por ID(Solo funciona si la tabla tiene ID)
+                </a>
             </div>
         </div>
-    </div>
 
+    </div>
     <div class="card-body">
         {% if error %}
             <div class="alert alert-danger" role="alert">
@@ -45,7 +55,7 @@
                         </div>
                         <div class="d-flex align-items-center">
                             <select class="form-select form-select-sm w-auto" id="columnSelect">
-                                <option value="all">Todas las columnas</option>
+                                <option value="0">Todas las columnas</option>
                             </select>
                             <input type="text" 
                                    class="form-control form-control-sm" 
@@ -58,28 +68,22 @@
                         <thead>
                             <tr>
                                 {% for columna in columnas %}
-                                    <th>{{ columna }}</th>
+                                    <th class="{% if forloop.counter == 1 %}id-column{% endif %}">{{ columna }}</th>
                                 {% endfor %}
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for fila in datos %}
-                                <tr class="data-row">
+                                <tr class="data-row" data-id="{{ fila.0 }}">
                                     {% for valor in fila %}
-                                        <td>
-                                            {% if valor|length > 100 %}
-                                                <div class="text-content">
-                                                    <span class="short-text">{{ valor|slice:":100" }}...</span>
-                                                    <span class="full-text" style="display: none;">{{ valor }}</span>
-                                                    <button class="btn btn-link btn-sm toggle-text" type="button">
-                                                        Ver más
-                                                    </button>
-                                                </div>
-                                            {% else %}
-                                                {{ valor|default_if_none:'-' }}
-                                            {% endif %}
+                                        <td class="{% if forloop.counter == 1 %}id-column{% endif %}">
+                                            {{ valor|truncatechars:100|default_if_none:'-' }}
                                         </td>
                                     {% endfor %}
+                                    <td>
+                                        <a href="{% url 'editar_datos' nombre_tabla fila.0 %}" class="btn btn-sm btn-warning">Editar</a>
+                                    </td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -103,23 +107,6 @@
         {% endif %}
     </div>
 </div>
-<style>
-.popup {
-    display: none;
-    background: white;
-    border: 1px solid #ddd;
-    padding: 10px;
-    border-radius: 4px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    margin-top: 5px;
-    max-height: 200px;
-    overflow-y: auto;
-}
-
-.text-content {
-    position: relative;
-}
-</style>
 
 <script>
 let currentPage = 1;
@@ -158,16 +145,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function filterTable() {
         const searchText = searchInput.value.toLowerCase();
+        const selectedColumnIndex = parseInt(columnSelect.value);
         const rows = document.querySelectorAll('table tbody tr');
 
         rows.forEach(row => {
             const cells = row.querySelectorAll('td');
-            const rowText = Array.from(cells).map(cell => cell.textContent.toLowerCase()).join(' ');
-            row.style.display = rowText.includes(searchText) ? '' : 'none';
+            let isVisible = false;
+
+            if (selectedColumnIndex === 0) {
+                // Buscar en todas las columnas
+                isVisible = Array.from(cells).some(cell => 
+                    cell.textContent.toLowerCase().includes(searchText)
+                );
+            } else {
+                // Buscar solo en la columna seleccionada
+                const cell = cells[selectedColumnIndex - 1];  // -1 porque los índices son base 0
+                if (cell) {
+                    isVisible = cell.textContent.toLowerCase().includes(searchText);
+                }
+            }
+
+            row.style.display = isVisible ? '' : 'none';
         });
     }
 
     searchInput.addEventListener('keyup', filterTable);
+
+    // Rellenar select de columnas dinámicamente
+    const headers = document.querySelectorAll('table thead th');
+    headers.forEach((header, index) => {
+        if (!header.classList.contains('id-column')) {  // Evitar la columna oculta
+            const option = document.createElement('option');
+            option.value = index + 1;  // Los valores del select empiezan desde 1
+            option.textContent = header.textContent.trim();
+            columnSelect.appendChild(option);
+        }
+    });
+
+    columnSelect.addEventListener('change', filterTable);
 });
 
 function updatePagination() {
@@ -192,37 +207,77 @@ function updatePagination() {
     document.getElementById('nextButton').disabled = endIndex >= totalRows;
 }
 
-// Asegurarse de que los botones de paginación existan en el HTML
-if (!document.getElementById('prevButton')) {
-    const paginationContainer = document.createElement('div');
-    paginationContainer.innerHTML = `
-        <button id="prevButton" class="btn btn-secondary">Anterior</button>
-        <button id="nextButton" class="btn btn-secondary">Siguiente</button>
-    `;
-    document.querySelector('.table').after(paginationContainer);
-}
+// Inicializar paginación
+document.addEventListener('DOMContentLoaded', updatePagination);
 
-// Manejar el botón "Ver más"
-document.querySelectorAll('.toggle-text').forEach(button => {
-    button.addEventListener('click', function(e) {
-        e.preventDefault();
-        const container = this.closest('.text-content');
-        const fullText = container.querySelector('.full-text').textContent;
-        
-        // Cerrar todos los popups abiertos
-        document.querySelectorAll('.popup').forEach(p => p.style.display = 'none');
-        
-        // Buscar o crear el popup
-        let popup = container.querySelector('.popup');
-        if (!popup) {
-            popup = document.createElement('div');
-            popup.className = 'popup';
-            container.appendChild(popup);
+// Función para convertir datos a CSV
+function convertToCSV(headers, rows) {
+    // Filtrar la columna "Acciones" del encabezado si existe
+    headers = headers.filter(header => header !== 'Acciones');
+    
+    // Crear la línea de encabezados
+    let csvContent = headers.join(';') + '\n';  // Cambiado a punto y coma
+    
+    // Agregar las filas de datos
+    rows.forEach(row => {
+        // Tomar solo las celdas que corresponden a datos
+        let cells = Array.from(row.cells);
+        if (headers.length < cells.length) {
+            cells = cells.slice(0, -1); // Excluir la última columna (Acciones)
         }
         
-        popup.textContent = fullText;
-        popup.style.display = popup.style.display === 'none' ? 'block' : 'none';
+        let rowData = cells.map(cell => {
+            let value = cell.textContent.trim();
+            // Reemplazar comas por puntos en números
+            if (!isNaN(value.replace(',', '.'))) {
+                value = value.replace(',', '.');
+            }
+            // Escapar punto y coma y comillas en los valores
+            if (value.includes(';') || value.includes('"') || value.includes('\n')) {
+                value = `"${value.replace(/"/g, '""')}"`;
+            }
+            return value;
+        });
+        csvContent += rowData.join(';') + '\n';  // Cambiado a punto y coma
     });
+    
+    return csvContent;
+}
+
+// Función para descargar CSV
+function downloadCSV(csvContent, fileName) {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Event listener para descargar datos visibles
+document.getElementById('downloadVisibleButton').addEventListener('click', function() {
+    const table = document.querySelector('table');
+    const headers = Array.from(table.querySelectorAll('thead th'))
+        .map(th => th.textContent.trim());
+    const visibleRows = Array.from(table.querySelectorAll('tbody tr'))
+        .filter(row => row.style.display !== 'none');
+    
+    const csvContent = convertToCSV(headers, visibleRows);
+    const tableName = document.querySelector('h2').textContent.trim();
+    downloadCSV(csvContent, `${tableName}_visible.csv`);
+});
+
+// Event listener para descargar todos los datos
+document.getElementById('downloadAllButton').addEventListener('click', function() {
+    const table = document.querySelector('table');
+    const headers = Array.from(table.querySelectorAll('thead th'))
+        .map(th => th.textContent.trim());
+    const allRows = Array.from(table.querySelectorAll('tbody tr'));
+    
+    const csvContent = convertToCSV(headers, allRows);
+    const tableName = document.querySelector('h2').textContent.trim();
+    downloadCSV(csvContent, `${tableName}_completo.csv`);
 });
 </script>
 {% endblock %}
