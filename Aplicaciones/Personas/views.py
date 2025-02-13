@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.shortcuts import render, redirect, HttpResponseRedirect, get_object_or_404
-from .models import Personas, Animal, Videojuego, TablaImportada
+from .models import Personas, TablaImportada
 from django.http import HttpResponseRedirect, JsonResponse
 import pandas as pd
 from sqlalchemy import create_engine
@@ -16,6 +16,7 @@ import csv
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 import io
+import hashlib
 
 logger = logging.getLogger(__name__)
 
@@ -24,279 +25,6 @@ logger = logging.getLogger(__name__)
 def home(request):
     personas = Personas.objects.all()  # Consultar todas las personas
     return render(request, 'gestionPersonas.html', {'personas': personas})
-
-def listar_animales(request):
-    animales = Animal.objects.all()  # Obtener todos los animales
-    personas = Personas.objects.all()  # Obtener todas las personas
-    return render(request, 'animales.html', {'animales': animales, 'personas': personas})
-
-from django.db import connection
-from django.shortcuts import render
-
-def gestion_personas(request):
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT id, nombre, localidad, edad, nacionalidad, coordenadas FROM Personas")
-        personas = cursor.fetchall()
-        print(personas)
-    # Pasamos los datos al contexto
-    context = {
-        'personas': personas
-    }
-    
-    return render(request, 'gestionPersonas.html', context)
-
-
-def registrarPersona(request):
-    if request.method == 'POST':
-        def smart_capitalize(text):
-            words = text.split()
-            return ' '.join(word if any(c.isupper() for c in word) else word.capitalize() for word in words)
-
-        nombre = request.POST['txtNombre']
-        localidad = request.POST['txtLocalidad']
-        edad = request.POST['numEdad']
-        nacionalidad = request.POST['txtNacionalidad']
-        coordenadas = request.POST['txtCoordenadas']
-        # Validación de nombre y apellidos
-        if len(nombre.strip()) < 2 or len(localidad.strip()) < 2 or len(nacionalidad.strip()) < 2 or len(coordenadas.strip()) < 2 or not all(c.isalpha() or c.isspace() for c in nombre + localidad + nacionalidad + coordenadas):
-            messages.warning(request, 'El nombre y apellidos deben contener al menos 2 letras y solo pueden contener letras')
-            context = {
-                'personas': Personas.objects.all(),
-                'datos_form': {
-                    'nombre': nombre,
-                    'localidad': localidad,
-                    'edad': edad,
-                    'nacionalidad': nacionalidad,
-                    'coordenadas': coordenadas
-                }
-            }
-            return render(request, 'gestionPersonas.html', context)
-
-        nombre = smart_capitalize(nombre)
-        localidad = smart_capitalize(localidad)
-
-
-        context = {
-            'personas': Personas.objects.all(),
-            'datos_form': {
-                'nombre': nombre,
-                'localidad': localidad,
-                'edad': edad,
-                'nacionalidad': nacionalidad,
-                'coordenadas': coordenadas
-            }
-        }
-        return render(request, 'gestionPersonas.html', context)
-
-        persona = Personas.objects.create(
-            nombre=nombre,
-            localidad=localidad,
-            edad=edad,
-            nacionalidad=nacionalidad,
-            coordenadas=coordenadas
-        )
-        messages.success(request, '¡Persona registrada!')
-        return redirect('/personas/')
-    
-    return redirect('/personas/')  # Si no es POST, redirigir a la lista
-
-def registrarAnimal(request):
-    def smart_capitalize(text):
-        words = text.split()
-        return ' '.join(word if any(c.isupper() for c in word) else word.capitalize() for word in words)
-    
-    nombre = smart_capitalize(request.POST['txtNombre'])
-    especie = smart_capitalize(request.POST['txtEspecie'])
-    edad = request.POST['numEdad']
-    mantenedor = smart_capitalize(request.POST['txtMantenedor'])
-    mantenedor_apellido = smart_capitalize(request.POST['txtMantenedorApellido'])
-
-    animal = Animal.objects.create(
-        nombre=nombre,
-        especie=especie,
-        edad=edad,
-        mantenedor=mantenedor,
-        mantenedor_apellido=mantenedor_apellido
-    )
-
-    messages.success(request, 'Animal añadido exitosamente.')
-    return redirect('animales')
-
-def edicionPersona2(request, id):
-    persona = Personas.objects.get(id=id)
-    def smart_capitalize(text):
-        words = text.split()
-        return ' '.join(word if any(c.isupper() for c in word) else word.capitalize() for word in words)
-    
-    if request.method == 'POST':
-        # Actualizar la persona con los datos del formulario
-        persona.nombre = smart_capitalize(request.POST.get('txtNombre'))
-        persona.apellidos = smart_capitalize(request.POST.get('txtApellidos'))
-        persona.edad = request.POST.get('numEdad')
-        persona.email = request.POST.get('txtEmail')
-        persona.save()
-        
-        # Redirigir a la página de origen
-        source = request.POST.get('source', 'gestion')
-        if source == 'prueba':
-            return redirect('gestionPersonasPrueba')
-        else:
-            return redirect('gestionPersonas')
-    
-    return render(request, 'edicionPersona.html', {'persona': persona, 'source': request.GET.get('source', 'gestion')})
-
-def edicionAnimal(request, id):
-    animal =Animal.objects.get(id=id)
-    return render(request, "edicionAnimal.html", {"animal":animal})
-
-def editarPersona(request):
-    id = request.POST['numID']
-    nombre = request.POST['txtNombre']
-    apellidos = request.POST['txtApellidos']
-    edad = request.POST['numEdad']
-    email = request.POST['txtEmail']
-
-    # Validación del email
-    if '@' not in email or not any(email.endswith(domain) for domain in ['.com', '.net', '.org', '.edu', '.gov']):
-        messages.success(request, 'El email debe contener un @ y terminar en .com, .net, .org, .edu o .gov')
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-
-    persona = Personas.objects.get(id=id)
-    persona.nombre = nombre
-    persona.apellidos = apellidos
-    persona.edad = edad
-    persona.email = email
-    persona.save()
-
-    messages.success(request, '¡Persona actualizada!')
-    return redirect('gestionPersonas')
-
-def editarAnimal(request):
-    def smart_capitalize(text):
-        words = text.split()
-        return ' '.join(word if any(c.isupper() for c in word) else word.capitalize() for word in words)
-    
-    if request.method == 'POST':
-        id = request.POST['numID']
-        nombre = smart_capitalize(request.POST['txtNombre'])
-        especie = smart_capitalize(request.POST['txtEspecie'])
-        edad = request.POST['numEdad']
-        mantenedor = smart_capitalize(request.POST['txtMantenedor'])
-        mantenedor_apellido = smart_capitalize(request.POST['txtMantenedorApellido'])
-
-        animal = Animal.objects.get(id=id)
-        animal.nombre = nombre
-        animal.especie = especie
-        animal.edad = edad
-        animal.mantenedor = mantenedor
-        animal.mantenedor_apellido = mantenedor_apellido
-        animal.save()
-
-        messages.success(request, '¡Animal actualizado!')
-        return redirect('animales')
-
-def eliminacionPersona(request, id):
-    persona = Personas.objects.get(id=id)
-    persona.delete()
-    messages.success(request, '¡Persona eliminada!')
-    return redirect('home')  # Cambiado de '/' a 'home'
-
-def eliminarAnimal(request, id):
-    animal = Animal.objects.get(id=id)
-    animal.delete()
-
-    # Añadir mensaje de éxito
-    messages.success(request, 'Animal eliminado exitosamente.')
-    
-    return redirect("animales")
-
-
-
-def listar_videojuegos(request):
-    consolas = {
-        'Nintendo': ['Switch', 'Wii U', '3DS', 'Nintendo 64', 'GameCube', 'Wii', 'Game Boy', 'Game Boy Color', 'Game Boy Advance', 'DS', 'New 3DS'],
-        'Xbox': ['Xbox', 'Xbox 360', 'Xbox One', 'Xbox Series S', 'Xbox Series X'],
-        'PlayStation': ['PS1', 'PS2', 'PS3', 'PS4', 'PS5', 'PSP', 'PS Vita']
-    }
-    
-    videojuegos = Videojuego.objects.all()
-    return render(request, 'videojuegos.html', {
-        'videojuegos': videojuegos,
-        'consolas': consolas
-    })
-
-def registrarVideojuego(request):
-    # Función para capitalizar solo palabras en minúsculas
-    def smart_capitalize(text):
-        words = text.split()
-        return ' '.join(word if any(c.isupper() for c in word) else word.capitalize() for word in words)
-    
-    nombre = smart_capitalize(request.POST['txtNombre'])
-    precio = request.POST['numPrecio']
-    consola = smart_capitalize(request.POST['txtConsola'])
-    cantidad = int(request.POST['numCantidad'])
-    
-    # Determinar disponibilidad basado en la cantidad
-    disponibilidad = 'sin_stock' if cantidad == 0 else 'ambos'
-    
-    videojuego = Videojuego.objects.create(
-        nombre=nombre,
-        precio=precio,
-        consola=consola,
-        cantidad=cantidad,
-        disponibilidad=disponibilidad
-    )
-    messages.success(request, '¡Videojuego registrado!')
-    return redirect('videojuegos')
-
-def edicionVideojuego(request, id):
-    consolas = {
-        'Nintendo': ['Switch', 'Wii U', '3DS', 'Nintendo 64', 'GameCube', 'Wii', 'Game Boy', 'Game Boy Color', 'Game Boy Advance', 'DS', 'New 3DS'],
-        'Xbox': ['Xbox', 'Xbox 360', 'Xbox One', 'Xbox Series S', 'Xbox Series X'],
-        'PlayStation': ['PS1', 'PS2', 'PS3', 'PS4', 'PS5', 'PSP', 'PS Vita']
-    }
-    videojuego = Videojuego.objects.get(id=id)
-    return render(request, "edicionVideojuego.html", {
-        "videojuego": videojuego,
-        "consolas": consolas
-    })
-
-def editarVideojuego(request):
-    # Función para capitalizar solo palabras en minúsculas
-    def smart_capitalize(text):
-        words = text.split()
-        return ' '.join(word if any(c.isupper() for c in word) else word.capitalize() for word in words)
-    
-    id = request.POST['numID']
-    nombre = smart_capitalize(request.POST['txtNombre'])
-    precio = request.POST['numPrecio']
-    consola = smart_capitalize(request.POST['txtConsola'])
-    cantidad = int(request.POST['numCantidad'])
-    disponibilidad = request.POST.get('selDisponibilidad', 'ambos')
-
-    # Si la cantidad es 0, forzar sin_stock
-    if cantidad == 0:
-        disponibilidad = 'sin_stock'
-    elif cantidad > 0 and disponibilidad == 'sin_stock':
-        disponibilidad = 'ambos'
-
-    videojuego = Videojuego.objects.get(id=id)
-    videojuego.nombre = nombre
-    videojuego.precio = precio
-    videojuego.consola = consola
-    videojuego.cantidad = cantidad
-    videojuego.disponibilidad = disponibilidad
-    videojuego.save()
-
-    messages.success(request, '¡Videojuego actualizado!')
-    return redirect('videojuegos')
-
-def eliminarVideojuego(request, id):
-    videojuego = Videojuego.objects.get(id=id)
-    videojuego.delete()
-
-    messages.success(request, 'Videojuego eliminado exitosamente.')
-    return redirect("videojuegos")
 
 def index(request):
     with connection.cursor() as cursor:
@@ -328,10 +56,14 @@ def crear_backup_tabla(nombre_tabla):
     """Helper function to create a backup of a table"""
     try:
         with connection.cursor() as cursor:
-            # Create backup table name
-            nombre_backup = f"{nombre_tabla}(backup)"
+            logger.info(f"Iniciando creación de backup para tabla {nombre_tabla}")
             
-            # Check if backup table already exists
+            # Truncar el nombre si es necesario para que quepa el sufijo _bk
+            max_length = 60  # 63 - 3 caracteres para '_bk'
+            nombre_base = nombre_tabla[:max_length] if len(nombre_tabla) > max_length else nombre_tabla
+            nombre_backup = f"{nombre_base}_bk"
+            
+            # Verificar si ya existe un backup
             cursor.execute("""
                 SELECT EXISTS (
                     SELECT FROM information_schema.tables 
@@ -340,17 +72,73 @@ def crear_backup_tabla(nombre_tabla):
                 )
             """, [nombre_backup])
             
-            exists = cursor.fetchone()[0]
-            if exists:
-                # If backup exists, drop it first
+            if cursor.fetchone()[0]:
+                logger.info(f"El backup {nombre_backup} ya existe, no se creará uno nuevo")
+                return False
+            
+            # Verificar si la tabla original existe
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = %s
+                )
+            """, [nombre_tabla])
+            
+            if not cursor.fetchone()[0]:
+                logger.error(f"La tabla original {nombre_tabla} no existe")
+                return False
+
+            try:
+                # Verificar si podemos acceder a la tabla
+                cursor.execute(f'SELECT * FROM "{nombre_tabla}" LIMIT 1')
+                logger.info(f"Acceso exitoso a la tabla {nombre_tabla}")
+            except Exception as e:
+                logger.error(f"No se puede acceder a la tabla {nombre_tabla}: {str(e)}")
+                return False
+            
+            try:
+                # Obtener estructura de la tabla
+                cursor.execute(f"""
+                    SELECT column_name, data_type 
+                    FROM information_schema.columns 
+                    WHERE table_schema = 'public' 
+                    AND table_name = %s 
+                    ORDER BY ordinal_position
+                """, [nombre_tabla])
+                columnas = cursor.fetchall()
+                logger.info(f"Estructura de tabla obtenida: {len(columnas)} columnas")
+                
+                if not columnas:
+                    logger.error(f"No se encontraron columnas en la tabla {nombre_tabla}")
+                    return False
+                
+                # Crear la tabla de backup con todas las columnas como TEXT
+                create_columns = [f'"{col[0]}" TEXT' for col in columnas]
+                
+                # Crear nueva tabla de backup
+                create_sql = f'CREATE TABLE "{nombre_backup}" ({", ".join(create_columns)})'
+                cursor.execute(create_sql)
+                logger.info(f"Nueva tabla de backup creada")
+                
+                # Copiar datos manteniendo el orden original
+                cursor.execute(f'''
+                    INSERT INTO "{nombre_backup}"
+                    SELECT * FROM "{nombre_tabla}"
+                    ORDER BY ctid
+                ''')
+                logger.info(f"Datos copiados exitosamente a la tabla de backup")
+                
+                return True
+                
+            except Exception as e:
+                logger.error(f"Error durante la creación del backup: {str(e)}")
+                # Intentar limpiar si algo salió mal
                 cursor.execute(f'DROP TABLE IF EXISTS "{nombre_backup}"')
-            
-            # Create backup table as a copy of the original
-            cursor.execute(f'CREATE TABLE "{nombre_backup}" AS TABLE "{nombre_tabla}"')
-            
-            return True
+                return False
+                
     except Exception as e:
-        logger.error(f"Error creating backup for table {nombre_tabla}: {str(e)}")
+        logger.error(f"Error general en crear_backup_tabla: {str(e)}")
         return False
 
 def ver_backups(request):
@@ -361,7 +149,7 @@ def ver_backups(request):
                 SELECT table_name 
                 FROM information_schema.tables 
                 WHERE table_schema = 'public'
-                AND table_name LIKE '%(backup)'
+                AND table_name LIKE '%_bk'
                 ORDER BY table_name
             """)
             backups = [row[0] for row in cursor.fetchall()]
@@ -416,117 +204,199 @@ def importar_datos_txt(request):
             file_name = file.name.lower()
             hojas_seleccionadas = request.POST.getlist('sheets[]')
             tablas_creadas = []
+            backups_existentes = []
 
-            if file_name.endswith('.csv'):
+            if file_name.endswith(('.xls', '.xlsx')):
                 try:
-                    # Leer el contenido del archivo
-                    content = file.read().decode('utf-8-sig')
-                    file.seek(0)
+                    engine = 'openpyxl' if file_name.endswith('.xlsx') else 'xlrd'
+                    excel_file = pd.ExcelFile(file, engine=engine)
+                    
+                    if len(excel_file.sheet_names) == 1 or not hojas_seleccionadas:
+                        # Primera lectura para detectar estructura
+                        df_preview = pd.read_excel(
+                            file,
+                            engine=engine,
+                            nrows=2
+                        )
+                        
+                        # Determinar el tipo de archivo basado en el número de columnas
+                        num_columns = len(df_preview.columns)
+                        
+                        if num_columns == 1:
+                            # Archivo de una columna - volver al formato original
+                            df = pd.read_excel(
+                                file,
+                                engine=engine,
+                                header=None
+                            )
+                            # Procesar la única columna como CSV
+                            data_strings = df[df.columns[0]].astype(str).tolist()
+                            reader = csv.reader([data_strings[0]], delimiter=',', quotechar='"')
+                            columns = next(reader)
+                            processed_rows = []
+                            for row in data_strings[1:]:
+                                reader = csv.reader([row], delimiter=',', quotechar='"')
+                                processed_rows.extend(reader)
+                            df = pd.DataFrame(processed_rows, columns=columns)
+                        else:
+                            # Archivo multicolumna - formato especial
+                            df = pd.read_excel(
+                                file,
+                                engine=engine,
+                                header=None
+                            )
+                            df.columns = df.iloc[0]
+                            df = df.iloc[1:]
+                        
+                        # Limpiar nombres de columnas (sin convertir a minúsculas)
+                        df.columns = [str(col).strip().replace(' ', '_') for col in df.columns]
+                        
+                        tabla_nombre = file_name.rsplit('.', 1)[0].lower().replace(' ', '_')
+                        
+                        # Guardar en base de datos
+                        engine = create_engine('postgresql://postgres:123@db:5432/server')
+                        df.to_sql(tabla_nombre, engine, if_exists='replace', index=False)
+                        
+                        # Crear backup después de crear la tabla
+                        if crear_backup_tabla(tabla_nombre):
+                            backups_existentes.append(tabla_nombre + "_bk")
+                        
+                        tablas_creadas.append(tabla_nombre)
+                        
+                    elif len(hojas_seleccionadas) > 7:
+                        messages.error(request, 'No se pueden procesar más de 7 hojas a la vez.')
+                        return redirect('importar_personas')
+                    else:
+                        for hoja in hojas_seleccionadas:
+                            df_preview = pd.read_excel(
+                                file,
+                                sheet_name=hoja,
+                                engine='openpyxl',
+                                nrows=2
+                            )
+                            
+                            num_columns = len(df_preview.columns)
+                            
+                            if num_columns == 1:
+                                df = pd.read_excel(
+                                    file,
+                                    sheet_name=hoja,
+                                    engine='openpyxl',
+                                    header=None
+                                )
+                                data_strings = df[df.columns[0]].astype(str).tolist()
+                                reader = csv.reader([data_strings[0]], delimiter=',', quotechar='"')
+                                columns = next(reader)
+                                processed_rows = []
+                                for row in data_strings[1:]:
+                                    reader = csv.reader([row], delimiter=',', quotechar='"')
+                                    processed_rows.extend(reader)
+                                df = pd.DataFrame(processed_rows, columns=columns)
+                            else:
+                                df = pd.read_excel(
+                                    file,
+                                    sheet_name=hoja,
+                                    engine='openpyxl',
+                                    header=None
+                                )
+                                df.columns = df.iloc[0]
+                                df = df.iloc[1:]
+                            
+                            df.columns = [str(col).strip().replace(' ', '_') for col in df.columns]
+                            
+                            tabla_nombre = f"{file_name.rsplit('.', 1)[0]}_{hoja}".lower().replace(' ', '_')
+                            
+                            # Guardar en base de datos
+                            engine = create_engine('postgresql://postgres:123@db:5432/server')
+                            df.to_sql(tabla_nombre, engine, if_exists='replace', index=False)
+                            
+                            # Crear backup después de crear la tabla
+                            if crear_backup_tabla(tabla_nombre):
+                                backups_existentes.append(tabla_nombre + "_bk")
+                            
+                            tablas_creadas.append(tabla_nombre)
 
-                    # Detectar el delimitador
-                    sniffer = csv.Sniffer()
-                    dialect = sniffer.sniff(content[:1024])
-                    delimiter = dialect.delimiter
+                except Exception as e:
+                    messages.error(request, f'Error al leer el archivo Excel: {str(e)}')
+                    return redirect('importar_personas')
 
-                    # Leer el CSV con pandas usando el delimitador detectado
+            elif file_name.endswith('.csv'):
+                try:
+                    logger.info(f"Iniciando importación de CSV: {file_name}")
+                    
+                    # Intentar diferentes encodings
+                    encodings = ['utf-8-sig', 'utf-8', 'latin1', 'iso-8859-1', 'cp1252']
+                    content = None
+                    
+                    for encoding in encodings:
+                        try:
+                            file.seek(0)
+                            content = file.read().decode(encoding)
+                            logger.info(f"Archivo leído exitosamente con encoding: {encoding}")
+                            break
+                        except UnicodeDecodeError:
+                            continue
+                    
+                    if content is None:
+                        raise Exception("No se pudo leer el archivo con ningún encoding")
+
+                    # Intentar detectar el delimitador
+                    delimiters = [',', ';', '|', '\t']
+                    delimiter = None
+                    
+                    for delim in delimiters:
+                        try:
+                            file.seek(0)
+                            df = pd.read_csv(
+                                io.StringIO(content),
+                                sep=delim,
+                                dtype=str,
+                                nrows=5  # Solo leer primeras filas para prueba
+                            )
+                            if len(df.columns) > 1:  # Si encontramos más de una columna
+                                delimiter = delim
+                                logger.info(f"Delimitador detectado: {delimiter}")
+                                break
+                        except Exception:
+                            continue
+
+                    if delimiter is None:
+                        raise Exception("No se pudo detectar el delimitador del archivo")
+
+                    # Leer el CSV completo
                     df = pd.read_csv(
                         io.StringIO(content),
                         sep=delimiter,
-                        encoding='utf-8',
-                        dtype=str  # Tratar todas las columnas como texto para evitar problemas de tipos
+                        dtype=str,  # Tratar todas las columnas como texto
+                        na_filter=False  # No convertir valores vacíos a NaN
                     )
-
+                    
                     # Limpiar nombres de columnas
                     df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
+                    df.columns = [col.replace('/', '_').replace('\\', '_') for col in df.columns]
+                    
+                    # Limpiar datos
+                    df = df.fillna('')  # Reemplazar NaN con string vacío
                     
                     # Crear nombre de tabla
-                    tabla_nombre = file_name.rsplit('.', 1)[0].lower().replace(' ', '_')
+                    tabla_nombre = file_name.rsplit('.', 1)[0].lower()
+                    tabla_nombre = ''.join(c if c.isalnum() or c == '_' else '_' for c in tabla_nombre)
+                    logger.info(f"Nombre de tabla a crear: {tabla_nombre}")
                     
                     # Conectar a la base de datos y guardar
                     engine = create_engine('postgresql://postgres:123@db:5432/server')
                     df.to_sql(tabla_nombre, engine, if_exists='replace', index=False)
+                    logger.info(f"Tabla {tabla_nombre} creada exitosamente")
+                    
+                    # Intentar crear backup
+                    if crear_backup_tabla(tabla_nombre):
+                        backups_existentes.append(tabla_nombre + "_bk")
+                    
                     tablas_creadas.append(tabla_nombre)
                     
-                    messages.success(request, f'CSV importado exitosamente como tabla: {tabla_nombre}')
-                    
                 except Exception as e:
-                    messages.error(request, f'Error específico al procesar CSV: {str(e)}')
-                    return redirect('importar_personas')
-
-            elif file_name.endswith(('.xls', '.xlsx')):
-                try:
-                    if file_name.endswith('.xlsx'):
-                        excel_file = pd.ExcelFile(file, engine='openpyxl')
-                    else:
-                        excel_file = pd.ExcelFile(file, engine='xlrd')
-                    
-                    # Si solo hay una hoja o no hay hojas seleccionadas, usar la primera hoja
-                    if len(excel_file.sheet_names) == 1 or not hojas_seleccionadas:
-                        df = pd.read_excel(
-                            file,
-                            engine='openpyxl' if file_name.endswith('.xlsx') else 'xlrd',
-                            header=None  # Usar la primera fila como encabezado de columnas
-                        )
-                        # Si los datos están en una sola columna, separarlos por comas
-                        if len(df.columns) == 1:
-                            # Obtener los datos como una lista de strings
-                            data_strings = df[df.columns[0]].astype(str).tolist()
-                            
-                            # Procesar la primera fila para obtener los nombres de las columnas
-                            reader = csv.reader([data_strings[0]], delimiter=',', quotechar='"')
-                            columns = next(reader)
-                            
-                            # Procesar el resto de las filas
-                            processed_rows = []
-                            for row in data_strings[1:]:  # Ignorar la primera fila, que ya es el encabezado
-                                reader = csv.reader([row], delimiter=',', quotechar='"')
-                                processed_rows.extend(reader)
-                            
-                            # Crear el DataFrame con las columnas detectadas
-                            df = pd.DataFrame(processed_rows, columns=columns)
-                        
-                        # Guardar en la base de datos
-                        tabla_nombre = file_name.rsplit('.', 1)[0].lower().replace(' ', '_')
-                        engine = create_engine('postgresql://postgres:123@db:5432/server')
-                        df.to_sql(tabla_nombre, engine, if_exists='replace', index=False)
-                        tablas_creadas.append(tabla_nombre)
-                    elif len(hojas_seleccionadas) > 3:
-                        messages.error(request, 'Solo se pueden importar hasta 3 hojas de Excel.')
-                        return redirect('importar_personas')
-                    else:
-                        # Para múltiples hojas seleccionadas
-                        for hoja in hojas_seleccionadas:
-                            df = pd.read_excel(
-                                file,
-                                sheet_name=hoja,
-                                engine='openpyxl',
-                                header=None  # Usar la primera fila como encabezado de columnas
-                            )
-                            # Si los datos están en una sola columna, separarlos por comas
-                            if len(df.columns) == 1:
-                                # Obtener los datos como una lista de strings
-                                data_strings = df[df.columns[0]].astype(str).tolist()
-                                
-                                # Procesar la primera fila para obtener los nombres de las columnas
-                                reader = csv.reader([data_strings[0]], delimiter=',', quotechar='"')
-                                columns = next(reader)
-                                
-                                # Procesar el resto de las filas
-                                processed_rows = []
-                                for row in data_strings[1:]:  # Ignorar la primera fila, que ya es el encabezado
-                                    reader = csv.reader([row], delimiter=',', quotechar='"')
-                                    processed_rows.extend(reader)
-                                
-                                # Crear el DataFrame con las columnas detectadas
-                                df = pd.DataFrame(processed_rows, columns=columns)
-                            
-                            # Guardar en la base de datos
-                            tabla_nombre = f"{file_name.rsplit('.', 1)[0]}_{hoja}".lower().replace(' ', '_')
-                            engine = create_engine('postgresql://postgres:123@db:5432/server')
-                            df.to_sql(tabla_nombre, engine, if_exists='replace', index=False)
-                            tablas_creadas.append(tabla_nombre)
-                except Exception as e:
-                    messages.error(request, f'Error al leer el archivo Excel: {str(e)}')
+                    logger.error(f"Error específico al procesar CSV: {str(e)}")
+                    messages.error(request, f'Error al procesar CSV: {str(e)}')
                     return redirect('importar_personas')
 
             elif file_name.endswith('.txt'):
@@ -568,21 +438,22 @@ def importar_datos_txt(request):
                 messages.error(request, 'Formato de archivo no soportado. Por favor, use CSV, Excel o TXT.')
                 return redirect('importar_personas')
 
-            # After successful import, create backup for each table
+            # Mensajes de éxito
             for tabla_nombre in tablas_creadas:
                 messages.success(request, f'Tabla {tabla_nombre} importada exitosamente')
-                if crear_backup_tabla(tabla_nombre):
-                    messages.success(request, f'Backup creado para la tabla {tabla_nombre}')
+                if tabla_nombre + "_bk" in backups_existentes:
+                    messages.info(request, f'Se creó backup para {tabla_nombre}')
                 else:
-                    messages.warning(request, f'No se pudo crear backup para la tabla {tabla_nombre}')
+                    messages.warning(request, f'Ya se encuentra creado el backup para {tabla_nombre}')
+                    logger.warning(f'Ya se encuentra creado el backup para {tabla_nombre}')
 
-            # Guardar las tablas creadas en la sesión
+
             request.session['tablas_importadas'] = tablas_creadas
-
-            return redirect('ver_datos_importados')
+            return redirect('importar_personas')
 
         except Exception as e:
-            messages.error(request, f'Error general en la importación: {str(e)}')
+            logger.error(f'Error en la importación: {str(e)}')
+            messages.error(request, f'Error en la importación: {str(e)}')
             return redirect('importar_personas')
 
     return render(request, 'importar_personas.html')
@@ -684,21 +555,42 @@ def ver_datos_tabla(request, nombre_tabla):
                     'datos': []
                 })
             
-            # Obtener los datos ordenados por ctid para mantener el orden físico de las filas
-            cursor.execute(f'SELECT * FROM "{nombre_tabla}" ORDER BY ctid LIMIT 1000')
-            columnas = [desc[0] for desc in cursor.description]
+            # Verificar si existe la columna 'id'
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT 1 
+                    FROM information_schema.columns 
+                    WHERE table_schema = 'public' 
+                    AND table_name = %s 
+                    AND column_name = 'id'
+                )
+            """, [nombre_tabla])
+            tiene_id = cursor.fetchone()[0]
+            
+            # Obtener los datos ordenados por ctid y preservar el orden con ROW_NUMBER
+            cursor.execute(f'''
+                WITH numbered_rows AS (
+                    SELECT *, ROW_NUMBER() OVER (ORDER BY ctid) as row_order
+                    FROM "{nombre_tabla}"
+                )
+                SELECT * FROM numbered_rows
+                ORDER BY row_order;
+            ''')
+            
+            columnas = [desc[0] for desc in cursor.description if desc[0] not in ['ctid', 'row_order']]
             datos = cursor.fetchall()
             
-            # Convertir los datos a un formato más amigable
+            # Convertir los datos a un formato más amigable, excluyendo row_order
             datos_formateados = []
             for fila in datos:
-                datos_formateados.append([str(valor) if valor is not None else '' for valor in fila])
+                datos_formateados.append([str(valor) if valor is not None else '' for valor in fila[:-1]])
             
             return render(request, 'verDatosTabla.html', {
                 'nombre_tabla': nombre_tabla,
                 'columnas': columnas,
                 'datos': datos_formateados,
-                'error': None
+                'error': None,
+                'tiene_id': tiene_id
             })
             
     except Exception as e:
@@ -706,7 +598,8 @@ def ver_datos_tabla(request, nombre_tabla):
             'error': str(e),
             'nombre_tabla': nombre_tabla,
             'columnas': [],
-            'datos': []
+            'datos': [],
+            'tiene_id': False
         })
 
 def importar_personas(request):
@@ -730,29 +623,6 @@ def importar_personas(request):
     
     return render(request, 'importar.html')
 
-def registrar_videojuego(request):
-    consolas = {
-        'Nintendo': ['Switch', 'Wii U', 'Wii', 'New 3DS', '3DS', 'Gameboy Advance'],
-        'Xbox': ['Xbox One', 'Xbox 360', 'Xbox Series X'],
-        'PlayStation': ['PS3', 'PS4', 'PS5', 'PS Vita']
-    }
-    
-    if request.method == 'POST':
-        # Procesar el formulario aquí
-        pass
-
-    return render(request, 'Aplicaciones/Personas/templates/videojuegos.html', {'consolas': consolas})
-
-def gestion_personas_prueba(request):
-    # Obtener la lista de personas
-    personas = Personas.objects.all()
-    
-    # Pasar la lista de personas al contexto
-    context = {
-        'personas': personas
-    }
-    
-    return render(request, 'GestionPersonasPrueba.html', context)
 
 def gestion_personas(request):
     # Obtener la lista de personas
@@ -764,26 +634,6 @@ def gestion_personas(request):
     }
     
     return render(request, 'gestionPersonas.html', context)
-
-def edicion_persona(request, id):
-    persona = get_object_or_404(Personas, id=id)
-    
-    if request.method == 'POST':
-        # Actualizar la persona con los datos del formulario
-        persona.nombre = request.POST.get('nombre')
-        persona.apellidos = request.POST.get('apellidos')
-        persona.edad = request.POST.get('edad')
-        persona.email = request.POST.get('email')
-        persona.save()
-        
-        # Redirigir a la página de origen
-        source = request.POST.get('source', 'gestion')
-        if source == 'prueba':
-            return redirect('gestionPersonasPrueba')
-        else:
-            return redirect('gestionPersonas')
-    
-    return render(request, 'edicionPersona.html', {'persona': persona, 'source': request.GET.get('source', 'gestion')})
 
 def listar_tablas_importadas(request):
     with connection.cursor() as cursor:
@@ -811,99 +661,13 @@ def listar_tablas_importadas(request):
 
     return render(request, 'listarTablasImportadas.html', {'tablas': tablas})
 
-def listar_mantenedores_animales(request):
-    # Obtener todas las personas
-    personas = Personas.objects.all()
-    # Obtener todos los animales
-    animales = Animal.objects.all()
-    
-    context = {
-        'personas': personas,
-        'animales': animales
-    }
-    return render(request, 'GestionPersonasPrueba.html', context)
-
-def edicion_persona_animal(request, id):
-    persona = Personas.objects.get(id=id)
-    animales = Animal.objects.filter(mantenedor=persona.nombre)
-    
-    context = {
-        'persona': persona,
-        'animales': animales,
-        'todas_especies': Animal.objects.values_list('especie', flat=True).distinct()
-    }
-    return render(request, 'edicionPersonaAnimal.html', context)
-
-def editarPersonaAnimal(request):
-    if request.method == 'POST':
-        
-        # Datos de la persona
-        persona_id = request.POST['persona_id']
-        persona = Personas.objects.get(id=persona_id)
-        persona.nombre = request.POST['nombre']
-        persona.apellidos = request.POST['apellidos']
-        persona.edad = request.POST['edad']
-        persona.email = request.POST['email']
-        persona.save()
-
-        # Actualizar animales existentes
-        animales_ids = request.POST.getlist('animal_id[]')
-        animales_nombres = request.POST.getlist('animal_nombre[]')
-        animales_especies = request.POST.getlist('animal_especie[]')
-        animales_edades = request.POST.getlist('animal_edad[]')
-
-        for i in range(len(animales_ids)):
-            if animales_ids[i]:  # Si existe el ID, actualizar
-                animal = Animal.objects.get(id=animales_ids[i])
-                animal.nombre = animales_nombres[i]
-                animal.especie = animales_especies[i]
-                animal.edad = animales_edades[i]
-                animal.mantenedor = persona.nombre
-                animal.save()
-
-        messages.success(request, '¡Datos actualizados correctamente!')
-        return redirect('gestionPersonasPrueba')
-
-    return redirect('gestionPersonasPrueba')
-
-def registrarAnimalPersonaExistente(request):
-    if request.method == 'POST':
-        persona_id = request.POST.get('personaExistente')
-        nombre_mascota = request.POST.get('txtNombreMascota')
-        especie = request.POST.get('txtEspecieMascota')
-        edad = request.POST.get('numEdadMascota')
-        
-        try:
-            persona = Personas.objects.get(id=persona_id)
-            animal = Animal.objects.create(
-                nombre=nombre_mascota,
-                especie=especie,
-                edad=edad,
-                mantenedor=persona.nombre,
-                mantenedor_apellido=persona.apellidos
-            )
-            messages.success(request, '¡Animal registrado correctamente!')
-        except Exception as e:
-            messages.error(request, 'Error al registrar el animal')
-        
-        return redirect('animales')
-
-def animales(request):
-    animales = Animal.objects.all()
-    personas = Personas.objects.all()  # Asegúrate de que el modelo se llame correctamente
-    return render(request, "animales.html", {
-        'animales': animales,
-        'personas': personas
-    })
-
 def listar_contenedores_tablas(request):
     with connection.cursor() as cursor:
-        # Obtener todas las tablas importadas
         cursor.execute("""
             SELECT tablename 
             FROM pg_tables 
             WHERE schemaname = 'public' 
-            AND tablename NOT LIKE '%(backup)'
+            AND tablename NOT LIKE '%_bk'
             AND tablename NOT IN (
                 'django_migrations',
                 'auth_user',
@@ -924,19 +688,28 @@ def listar_contenedores_tablas(request):
 
 def editar_datos(request, tabla_nombre, id):
     try:
-        # Verificar si la tabla existe
         with connection.cursor() as cursor:
-            cursor.execute(f'SELECT * FROM "{tabla_nombre}" WHERE id = %s', [id])
+            # Obtener el nombre de la primera columna
+            cursor.execute(f"""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_schema = 'public' 
+                AND table_name = %s 
+                ORDER BY ordinal_position 
+                LIMIT 1
+            """, [tabla_nombre])
+            primera_columna = cursor.fetchone()[0]
+
+            # Usar la primera columna para la búsqueda
+            cursor.execute(f'SELECT * FROM "{tabla_nombre}" WHERE "{primera_columna}" = %s', [id])
             row = cursor.fetchone()
             if not row:
                 messages.error(request, 'Registro no encontrado.')
                 return redirect('verDatosTabla', nombre_tabla=tabla_nombre)
             
-            # Obtener los nombres de las columnas
             columns = [col[0] for col in cursor.description]
 
         if request.method == 'POST':
-            # Recoger los datos del formulario
             update_data = {}
             for column in columns:
                 if column in request.POST:
@@ -946,18 +719,16 @@ def editar_datos(request, tabla_nombre, id):
                 messages.error(request, 'No se recibieron datos para actualizar.')
                 return redirect('editarDatos', tabla_nombre=tabla_nombre, id=id)
 
-            # Construir la consulta SQL para la actualización preservando el orden
             set_clause = ', '.join([f'"{column}" = %s' for column in update_data.keys()])
             values = list(update_data.values()) + [id]
 
             try:
-                # Actualizar los datos en la tabla manteniendo el orden original
                 with connection.cursor() as cursor:
+                    # Realizar la actualización usando la primera columna
                     cursor.execute(f"""
                         UPDATE "{tabla_nombre}"
                         SET {set_clause}
-                        WHERE id = %s
-                        RETURNING ctid
+                        WHERE "{primera_columna}" = %s
                     """, values)
 
                 messages.success(request, 'Datos actualizados correctamente.')
@@ -967,9 +738,7 @@ def editar_datos(request, tabla_nombre, id):
                 messages.error(request, f'Error al actualizar los datos: {str(e)}')
                 return redirect('editarDatos', tabla_nombre=tabla_nombre, id=id)
 
-        # Crear un diccionario de los datos del registro
         objeto = dict(zip(columns, row))
-
         return render(request, 'editar_datos.html', {
             'objeto': objeto,
             'tabla_nombre': tabla_nombre
@@ -1035,3 +804,19 @@ def redirect_with_success(request, success_message):
     messages.success(request, success_message)
     return redirect('importar_personas')  # Adjust the redirect target as needed
 
+@csrf_exempt
+def actualizar_orden_tabla(request, tabla_nombre):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(f"""
+                CREATE TABLE temp_table AS
+                SELECT * FROM "{tabla_nombre}"
+                ORDER BY CAST(id AS INTEGER);
+                
+                DROP TABLE "{tabla_nombre}";
+                ALTER TABLE temp_table RENAME TO "{tabla_nombre}";
+            """)
+    except Exception as e:
+        pass
+    
+    return redirect('verDatosTabla', nombre_tabla=tabla_nombre)

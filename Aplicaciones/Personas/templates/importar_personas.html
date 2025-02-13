@@ -9,11 +9,14 @@
     </div>
     <div class="card-body">
         {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
+            <div id="message-container">
+                {% for message in messages|slice:":4" %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
         {% endif %}
 
         <form method="post" enctype="multipart/form-data" id="importForm">
@@ -32,19 +35,18 @@
                         <i class="fas fa-exclamation-triangle"></i>
                         <strong>Importante:</strong> 
                         <ul class="mb-0">
-                            <li>Se pueden procesar hasta una maximo de 3 hojas en formato excel xslx.</li>
+                            <li>Se pueden procesar hasta una maximo de 7 hojas en formato excel xslx.</li>
                             <li>Los datos vacíos o valores NA/NULL serán manejados automáticamente.</li>
                             <li>Los datos se importan a la base de datos automaticamente.</li>
-                            <li>Se creará un backup de los datos importados.</li>
+                            <li>Se creará un backup de los datos importados no editable. El backup no se creara mas de 1 vez por importación.</li>
                             <li>En caso de detectar una fila vacio en la columna del archivo durante la importación, fallara la importación.</li>
-                            <li>No se pueden editar datos que no contengan ID.</li>
                         </ul>
                     </div>
                 </div>
             </div>
             <!-- Reemplazar el div del selector de hojas por esto -->
             <div id="sheetSelector" style="display:none;" class="mb-3">
-                <label for="sheet" class="form-label">Seleccionar hojas (máximo 3):</label>
+                <label for="sheet" class="form-label">Seleccionar hojas (máximo 7):</label>
                 <div id="sheetCheckboxes">
                     <!-- Las hojas se agregarán aquí -->
                 </div>
@@ -58,6 +60,21 @@
 </div>
 
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Manejar el cierre de alertas
+        const messageContainer = document.getElementById('message-container');
+        if (messageContainer) {
+            messageContainer.addEventListener('click', function(e) {
+                if (e.target.classList.contains('btn-close')) {
+                    const alert = e.target.closest('.alert');
+                    if (alert) {
+                        alert.remove();
+                    }
+                }
+            });
+        }
+    });
+
     document.getElementById('file').addEventListener('change', function() {
         var fileInput = document.getElementById('file');
         var sheetSelector = document.getElementById('sheetSelector');

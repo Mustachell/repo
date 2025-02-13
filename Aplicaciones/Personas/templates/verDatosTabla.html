@@ -26,8 +26,12 @@
             <div class="btn-group">
                 <button id="downloadVisibleButton" class="btn btn-sm btn-primary">Descargar Visible</button>
                 <button id="downloadAllButton" class="btn btn-sm btn-secondary">Descargar Todo</button>
+                <a href="{% url 'actualizar_orden_tabla' nombre_tabla %}" class="btn btn-sm btn-info">
+                    Ordenar por ID(Solo funciona si la tabla tiene ID)
+                </a>
             </div>
         </div>
+
     </div>
     <div class="card-body">
         {% if error %}
@@ -64,25 +68,21 @@
                         <thead>
                             <tr>
                                 {% for columna in columnas %}
-                                    <th class="{% if columna == 'id' %}id-column{% endif %}">{{ columna }}</th>
+                                    <th class="{% if forloop.counter == 1 %}id-column{% endif %}">{{ columna }}</th>
                                 {% endfor %}
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for fila in datos %}
-                                <tr class="data-row">
+                                <tr class="data-row" data-id="{{ fila.0 }}">
                                     {% for valor in fila %}
                                         <td class="{% if forloop.counter == 1 %}id-column{% endif %}">
                                             {{ valor|truncatechars:100|default_if_none:'-' }}
                                         </td>
                                     {% endfor %}
                                     <td>
-                                        {% if fila.0 %}  {# Verificar que el ID existe #}
-                                            <a href="{% url 'editar_datos' nombre_tabla fila.0 %}" class="btn btn-sm btn-warning">Editar</a>
-                                        {% else %}
-                                            <button class="btn btn-sm btn-warning" disabled>Editar</button>
-                                        {% endif %}
+                                        <a href="{% url 'editar_datos' nombre_tabla fila.0 %}" class="btn btn-sm btn-warning">Editar</a>
                                     </td>
                                 </tr>
                             {% endfor %}
