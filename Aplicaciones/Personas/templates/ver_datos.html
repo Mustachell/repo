@@ -7,7 +7,7 @@
 <div class="card">
     <div class="card-header bg-primary text-white">
         <div class="d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">Datos Importados: {{ nombre_tabla }}</h4>
+            <h4 class="mb-0">Datos Importados: {{ tabla_nombre }}</h4>
             <div class="d-flex align-items-center gap-3">
                 <a href="{% url 'importar_personas' %}" class="btn btn-light btn-sm">
                     Importar Nuevos Datos
@@ -53,19 +53,39 @@
 
             <!-- Tabla -->
             <div class="table-responsive">
-                <table class="table">
+                <table class="table table-striped">
                     <thead>
                         <tr>
                             {% for columna in columnas %}
-                                <th>{{ columna }}</th>
+                                <th style="white-space: nowrap;">{{ columna }}</th>
                             {% endfor %}
                         </tr>
                     </thead>
                     <tbody>
                         {% for fila in datos %}
                             <tr>
-                                {% for valor in fila %}
-                                    <td>{{ valor }}</td>
+                                {% for columna in columnas %}
+                                    <td style="white-space: nowrap;">
+                                        {% with valor=fila|get_item:columna %}
+                                            {% if valor|stringformat:"s"|matches_coordinates %}
+                                                <a href="#map" class="coordenada-link" data-coords="{{ valor }}">{{ valor }}</a>
+                                            {% else %}
+                                                {% with texto_completo=valor|stringformat:"s" %}
+                                                    {{ texto_completo|truncatechars:100 }}
+                                                    {% if texto_completo|length > 100 %}
+                                                        <button type="button" class="btn btn-link btn-sm p-0 ms-1" 
+                                                                data-bs-toggle="popover" 
+                                                                data-bs-trigger="click"
+                                                                data-bs-content="{{ texto_completo }}"
+                                                                data-bs-title="{{ columna }}"
+                                                                data-bs-html="true">
+                                                            <small>[Ver más]</small>
+                                                        </button>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
                                 {% endfor %}
                             </tr>
                         {% endfor %}
@@ -114,6 +134,12 @@
                 </ul>
             </nav>
         {% else %}
+            <div class="alert alert-info d-flex justify-content-between align-items-center">
+                <span>No hay datos para mostrar</span>
+                {% if columna_actual or busqueda_actual %}
+                    <a href="?items={{ items_por_pagina }}" class="btn btn-primary btn-sm">Volver a la lista completa</a>
+                {% endif %}
+            </div>
         {% endif %}
     </div>
 </div>
@@ -123,47 +149,176 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-// Event listeners para paginación y búsqueda
 document.getElementById('itemsPerPage').addEventListener('change', function() {
     var urlParams = new URLSearchParams(window.location.search);
     urlParams.set('items', this.value);
     window.location.href = '?' + urlParams.toString();
 });
 
-// Inicialización de Leaflet y manejo de coordenadas
 document.addEventListener('DOMContentLoaded', function() {
+    // Verificar si hay coordenadas en la tabla
     const coordLinks = document.querySelectorAll('.coordenada-link');
     let map = null;
-    let currentMarker = null;
-    let mapContainer = document.getElementById('mapContainer');
+    let currentMarker = null; // Para mantener referencia al marcador actual
 
-    coordLinks.forEach(link => {
-        link.addEventListener('click', function(event) {
-            event.preventDefault();
-            const coords = this.dataset.coords.split(',');
-            const lat = parseFloat(coords[0].trim());
-            const lng = parseFloat(coords[1].trim());
+    if (coordLinks.length > 0) {
+        // Mostrar el contenedor del mapa si hay coordenadas
+        document.getElementById('mapContainer').style.display = 'block';
+        
+        // Inicializar el mapa
+        map = L.map('map').setView([-36.8094955, -73.0674156], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
 
-            mapContainer.style.display = 'block';
-            if (!map) {
-                map = L.map('map').setView([lat, lng], 15);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 18,
-                    attribution: '© OpenStreetMap'
-                }).addTo(map);
-            } else {
-                map.setView([lat, lng], 15);
-            }
+        // Función para manejar el clic en una coordenada
+        function handleCoordClick(e) {
+            e.preventDefault();
+            const coords = e.target.dataset.coords.split(',').map(coord => parseFloat(coord.trim()));
 
+            // Remover el marcador anterior si existe
             if (currentMarker) {
                 map.removeLayer(currentMarker);
             }
 
-            currentMarker = L.marker([lat, lng]).addTo(map)
-                .bindPopup(`<b>Coordenadas:</b> ${lat}, ${lng}`).openPopup();
+            // Crear nuevo marcador
+            currentMarker = L.marker(coords)
+                .addTo(map)
+                .bindPopup(`Ubicación: ${coords[0]}, ${coords[1]}`);
+
+            // Hacer zoom a la ubicación
+            map.setView(coords, 15);
+            
+            // Abrir el popup del marcador
+            currentMarker.openPopup();
+        }
+
+        // Agregar event listeners a los enlaces de coordenadas
+        coordLinks.forEach(link => {
+            link.addEventListener('click', handleCoordClick);
         });
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const textoModal = new bootstrap.Modal(document.getElementById('textoModal'), {
+        keyboard: true,
+        backdrop: true
+    });
+    
+    window.mostrarTextoCompleto = function(texto, columna) {
+        document.getElementById('textoModalLabel').textContent = columna;
+        document.getElementById('textoModalContent').textContent = texto;
+        textoModal.show();
+    };
+});
+
+// Función para resetear búsqueda
+function resetSearch() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('columnaSelect').value = '';
+    filterTable();
+}
+
+// Función para filtrar tabla
+function filterTable() {
+    const searchText = document.getElementById('searchInput').value.toLowerCase();
+    const selectedColumn = document.getElementById('columnaSelect').value;
+    const rows = document.querySelectorAll('table tbody tr');
+
+    rows.forEach(row => {
+        const cells = row.getElementsByTagName('td');
+        let found = false;
+
+        Array.from(cells).forEach((cell, index) => {
+            if (!selectedColumn || columnas[index] === selectedColumn) {
+                if (cell.textContent.toLowerCase().includes(searchText)) {
+                    found = true;
+                }
+            }
+        });
+
+        row.style.display = found ? '' : 'none';
+    });
+}
+
+// Modal para texto completo
+let modal = null;
+document.addEventListener('DOMContentLoaded', function() {
+    modal = new bootstrap.Modal(document.getElementById('textoModal'));
+    
+    // Event listeners para búsqueda
+    const searchInput = document.getElementById('searchInput');
+    const columnaSelect = document.getElementById('columnaSelect');
+    searchInput.addEventListener('input', filterTable);
+    columnaSelect.addEventListener('change', filterTable);
+});
+
+function mostrarTextoCompleto(texto, columna) {
+    const modalEl = document.getElementById('textoModal');
+    modalEl.querySelector('.modal-title').textContent = columna;
+    modalEl.querySelector('.modal-body p').textContent = texto;
+    modal.show();
+}
+
+// Variables para el script
+const columnas = JSON.parse('{% if columnas %}[{% for columna in columnas %}"{{ columna }}"{% if not forloop.last %},{% endif %}{% endfor %}]{% else %}[]{% endif %}');
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar todos los popovers
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl, {
+            container: 'body',
+            placement: 'auto'
+        })
+    })
+
+    // Cerrar popover al hacer clic en cualquier parte
+    document.addEventListener('click', function(e) {
+        if (!e.target.matches('[data-bs-toggle="popover"]')) {
+            popoverTriggerList.forEach(function(popover) {
+                bootstrap.Popover.getInstance(popover)?.hide();
+            });
+        }
     });
 });
 </script>
 
-{% endblock %}
+<!-- Modal para texto completo -->
+<div class="modal fade" id="textoModal" tabindex="-1" aria-labelledby="textoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="textoModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="textoModalContent" style="white-space: pre-wrap;"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.tooltip-inner {
+    max-width: 350px;
+    text-align: left;
+    padding: 10px;
+    background-color: #fff;
+    color: #000;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.popover {
+    max-width: 400px;
+}
+.popover-body {
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-size: 14px;
+    padding: 15px;
+}
+</style>
+{% endblock %} 

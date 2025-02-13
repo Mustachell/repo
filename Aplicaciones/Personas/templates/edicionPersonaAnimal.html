@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="card">
+    <div class="card-header">
+        <h2>Editar Persona y sus Animales</h2>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{% url 'editarPersonaAnimal' %}">
+            {% csrf_token %}
+            <input type="hidden" name="persona_id" value="{{ persona.id }}">
+            
+            <!-- Datos de la persona -->
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label>Nombre:</label>
+                    <input type="text" name="nombre" value="{{ persona.nombre }}" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <label>Apellidos:</label>
+                    <input type="text" name="apellidos" value="{{ persona.apellidos }}" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <label>Edad:</label>
+                    <input type="number" name="edad" value="{{ persona.edad }}" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <label>Email:</label>
+                    <input type="email" name="email" value="{{ persona.email }}" class="form-control" required>
+                </div>
+            </div>
+
+            <!-- Animales -->
+            <h4>Animales a Cargo</h4>
+            <div id="animales-container">
+                {% for animal in animales %}
+                    {% if animal.mantenedor == persona.nombre and animal.mantenedor_apellido == persona.apellidos %}
+                    <div class="row mb-3 animal-entry">
+                        <input type="hidden" name="animal_ids[]" value="{{ animal.id }}">
+                        <div class="col-md-3">
+                            <label>Nombre:</label>
+                            <input type="text" name="animal_nombres[]" value="{{ animal.nombre }}" class="form-control" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label>Especie:</label>
+                            <input type="text" name="animal_especies[]" value="{{ animal.especie }}" class="form-control" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label>Edad:</label>
+                            <input type="number" name="animal_edades[]" value="{{ animal.edad }}" class="form-control" required>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            <a href="{% url 'gestionPersonasPrueba' %}" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+{% endblock %} 

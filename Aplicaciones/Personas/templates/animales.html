@@ -1,0 +1,362 @@
+{% extends "./base.html" %}
+{% load static %}
+
+{% block title %}Listado de Animales{% endblock %}
+
+{% block css %}
+<style>
+    .container {
+        background: url('{% static "img/animales.webp" %}') no-repeat center center !important;
+        background-size: cover !important;
+        border-radius: 10px;
+        padding: 20px;
+        position: relative;
+    }
+
+    .container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 206, 12, 0.9) !important;
+        border-radius: 10px;
+        z-index: 0;
+    }
+
+    .container > * {
+        position: relative;
+        z-index: 1;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+
+<div class="row">
+    <div class="col-sm-12">
+        <!-- Mensajes de alerta -->
+        {% if messages %}
+        <div id="message-alert">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-purple alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- Columna izquierda -->
+    <div class="col-md-4">
+        <!-- Gestador de Animales original -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2>Gestador de Animales</h2>
+                <form action="/registrarAnimal/" method="POST">{% csrf_token %}
+                    <div class="form-group">
+                        <input type="text" id="txtNombre" name="txtNombre" 
+                               class="form-control" placeholder="Nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <select id="txtEspecie" name="txtEspecie" class="form-control" required>
+                            <option value="" disabled selected>Seleccione una especie</option>
+                            <optgroup label="Mamíferos">
+                                <option value="Perro">Perro</option>
+                                <option value="Gato">Gato</option>
+                                <option value="Ratón">Ratón</option>
+                                <option value="León">León</option>
+                                <option value="Tigre">Tigre</option>
+                                <option value="Elefante">Elefante</option>
+                                <option value="Jirafa">Jirafa</option>
+                                <option value="Mono">Mono</option>
+                                <option value="Koala">Koala</option>
+                                <option value="Canguro">Canguro</option>
+                                <option value="Delfín">Delfín</option>
+                                <option value="Oso">Oso</option>
+                            </optgroup>
+                            <optgroup label="Aves">
+                                <option value="Pingüino">Pingüino</option>
+                                <option value="Águila">Águila</option>
+                                <option value="Loro">Loro</option>
+                                <option value="Búho">Búho</option>
+                                <option value="Flamingo">Flamingo</option>
+                                <option value="Zorzal">Zorzal</option>
+                            </optgroup>
+                            <optgroup label="Reptiles">
+                                <option value="Tortuga">Tortuga</option>
+                                <option value="Iguana">Iguana</option>
+                                <option value="Serpiente">Serpiente</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="numEdad" name="numEdad" 
+                               class="form-control" placeholder="Edad" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="txtMantenedor" name="txtMantenedor" 
+                               class="form-control" placeholder="Mantenedor" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="txtMantenedorApellido" name="txtMantenedorApellido" 
+                               class="form-control" placeholder="Apellido Mantenedor" required>
+                    </div>
+                    <div class="form-group d-grid">
+                        <button type="submit" class="btn btn-success">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Registro con Persona Existente -->
+        <div class="card">
+            <div class="card-body">
+                <h2>Registro con Persona Existente</h2>
+                <form action="{% url 'registrarAnimalPersonaExistente' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <select name="personaExistente" class="form-control" required>
+                            <option value="">Seleccione una persona</option>
+                            {% for persona in personas %}
+                                <option value="{{ persona.id }}" data-nombre="{{ persona.nombre }}" data-apellidos="{{ persona.apellidos }}">
+                                    {{ persona.nombre }} {{ persona.apellidos }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="txtNombreMascota" name="txtNombreMascota" 
+                               class="form-control" placeholder="Nombre Mascota" required>
+                    </div>
+                    <div class="form-group">
+                        <select id="txtEspecieMascota" name="txtEspecieMascota" class="form-control" required>
+                            <option value="" disabled selected>Seleccione una especie</option>
+                            <optgroup label="Mamíferos">
+                                <option value="Perro">Perro</option>
+                                <option value="Gato">Gato</option>
+                                <option value="Ratón">Ratón</option>
+                                <option value="León">León</option>
+                                <option value="Tigre">Tigre</option>
+                                <option value="Elefante">Elefante</option>
+                                <option value="Jirafa">Jirafa</option>
+                                <option value="Mono">Mono</option>
+                                <option value="Koala">Koala</option>
+                                <option value="Canguro">Canguro</option>
+                                <option value="Delfín">Delfín</option>
+                                <option value="Oso">Oso</option>
+                            </optgroup>
+                            <optgroup label="Aves">
+                                <option value="Pingüino">Pingüino</option>
+                                <option value="Águila">Águila</option>
+                                <option value="Loro">Loro</option>
+                                <option value="Búho">Búho</option>
+                                <option value="Flamingo">Flamingo</option>
+                                <option value="Zorzal">Zorzal</option>
+                            </optgroup>
+                            <optgroup label="Reptiles">
+                                <option value="Tortuga">Tortuga</option>
+                                <option value="Iguana">Iguana</option>
+                                <option value="Serpiente">Serpiente</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="numEdadMascota" name="numEdadMascota" 
+                               class="form-control" placeholder="Edad Mascota" required>
+                    </div>
+                    <div class="form-group d-grid">
+                        <button type="submit" class="btn btn-success">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna derecha - Tabla -->
+    <div class="col-md-8">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 class="mb-0">Listado de Animales</h1>
+            <div class="input-group" style="width: 300px;">
+                <select id="searchColumn" class="form-select flex-grow-0" style="width: auto;">
+                    <option value="1">Nombre</option>
+                    <option value="2">Especie</option>
+                    <option value="4">Mantenedor</option>
+                </select>
+                <input type="text" id="searchInput" class="form-control" placeholder="Buscar...">
+            </div>
+            <div class="form-group mb-0">
+                <label for="entriesSelect" class="me-2">Mostrar:</label>
+                <select id="entriesSelect" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+        </div>
+        <div class="table-responsive py-2">
+            <table class="table table-striped text-center">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nombre</th>
+                        <th>Especie</th>
+                        <th>Edad</th>
+                        <th>Mantenedor</th>
+                        <th>Apellido Mantenedor</th>
+                        <th colspan="2">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in animales %}
+                    <tr class="animal-row">
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ a.nombre }}</td>
+                        <td>{{ a.especie }}</td>
+                        <td>{{ a.edad }}</td>
+                        <td>{{ a.mantenedor }}</td>
+                        <td>{{ a.mantenedor_apellido }}</td>
+                        <td><a href="edicionAnimal/{{ a.id }}" class="btn btn-info">Editar</a></td>
+                        <td><a href="eliminacionAnimal/{{ a.id }}" class="btn btn-danger"
+                        onclick="return confirmDelete();">Eliminar</a></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4">No se encontraron animales.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Controles de paginación -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    Mostrando <span id="startIndex">1</span> a <span id="endIndex">5</span> de <span id="totalItems">{{ animales.count }}</span> registros
+                </div>
+                <div>
+                    <button id="prevPage" class="btn btn-secondary me-2" disabled>&laquo; Anterior</button>
+                    <button id="nextPage" class="btn btn-secondary">Siguiente &raquo;</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Función de confirmación antes de eliminar
+    function confirmDelete() {
+        return confirm("¿Estás seguro de que deseas eliminar esta mascota?");
+    }
+  </script>
+  
+  <script>
+  // Ocultar los mensajes después de 10 segundos
+  setTimeout(function() {
+      var alert = document.getElementById('message-alert');
+      if (alert) {
+          alert.style.display = 'none';
+      }
+  }, 5000);  // 10 segundos
+  </script>
+  
+  <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const entriesSelect = document.getElementById('entriesSelect');
+    const rows = document.querySelectorAll('.animal-row');
+    const prevButton = document.getElementById('prevPage');
+    const nextButton = document.getElementById('nextPage');
+    const startIndexSpan = document.getElementById('startIndex');
+    const endIndexSpan = document.getElementById('endIndex');
+    const totalItemsSpan = document.getElementById('totalItems');
+    
+    let currentPage = 1;
+    let rowsPerPage = 5;
+    
+    function updatePagination() {
+        const totalRows = rows.length;
+        const totalPages = Math.ceil(totalRows / rowsPerPage);
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
+        
+        rows.forEach((row, index) => {
+            if (index >= startIndex && index < endIndex) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        prevButton.disabled = currentPage === 1;
+        nextButton.disabled = currentPage === totalPages;
+        
+        startIndexSpan.textContent = startIndex + 1;
+        endIndexSpan.textContent = endIndex;
+        totalItemsSpan.textContent = totalRows;
+    }
+    
+    entriesSelect.addEventListener('change', function() {
+        rowsPerPage = parseInt(this.value);
+        currentPage = 1;
+        updatePagination();
+    });
+    
+    prevButton.addEventListener('click', function() {
+        if (currentPage > 1) {
+            currentPage--;
+            updatePagination();
+        }
+    });
+    
+    nextButton.addEventListener('click', function() {
+        const totalPages = Math.ceil(rows.length / rowsPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            updatePagination();
+        }
+    });
+    
+    entriesSelect.value = '5';
+    updatePagination();
+});
+</script>
+  
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    let searchText = this.value.toLowerCase();
+    let column = document.getElementById('searchColumn').value;
+    let rows = document.getElementsByClassName('animal-row');
+    
+    Array.from(rows).forEach(row => {
+        let cell = row.getElementsByTagName('td')[column];
+        let value = cell.textContent || cell.innerText;
+        
+        if (value.toLowerCase().indexOf(searchText) > -1) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+</script>
+  
+<script>
+function actualizarDatosPersona() {
+    const select = document.querySelector('select[name="personaExistente"]');
+    const nombreInput = document.getElementById('nombrePersona');
+    const apellidoInput = document.getElementById('apellidoPersona');
+    const selectedOption = select.options[select.selectedIndex];
+    
+    nombreInput.value = selectedOption.dataset.nombre;
+    apellidoInput.value = selectedOption.dataset.apellidos;
+}
+
+document.querySelector('select[name="personaExistente"]').addEventListener('change', actualizarDatosPersona);
+</script>
+  
+  {% endblock %}

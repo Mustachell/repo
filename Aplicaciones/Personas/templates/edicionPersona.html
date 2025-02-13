@@ -1,0 +1,87 @@
+{% extends "./base.html" %}
+{% load static %}
+
+{% block title %}Edición de Persona{% endblock %}
+
+{% block css %}
+<style>
+    .container {
+        background: url('{% static "img/personas.jpg" %}') no-repeat center center !important;
+        background-size: cover !important;
+        border-radius: 10px;
+        padding: 20px;
+        position: relative;
+    }
+
+    .container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 206, 12, 0.9) !important;
+        border-radius: 10px;
+        z-index: 0;
+    }
+
+    .container > * {
+        position: relative;
+        z-index: 1;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="row">
+    <div class="col-md-4 offset-md-4">
+        <h2>Edición de Persona</h2>
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        <div class="card">
+            <div class="card-body">
+                <form action="{% url 'edicionPersona2' persona.id %}" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="source" value="{{ source }}">
+                    <div class="form-group">
+                        <input type="text" id="txtNombre" name="txtNombre" 
+                               value="{{persona.nombre}}" class="form-control" 
+                               placeholder="Nombre" maxlength="50" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="txtApellidos" name="txtApellidos" 
+                               value="{{persona.apellidos}}" class="form-control" 
+                               placeholder="Apellidos" maxlength="50" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="numEdad" name="numEdad" 
+                               value="{{persona.edad}}" class="form-control" 
+                               placeholder="Edad" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" id="txtEmail" name="txtEmail" 
+                               value="{{ persona.email }}" class="form-control" 
+                               placeholder="Email" required
+                               oninvalid="this.setCustomValidity('Por favor, ingrese un email válido (ejemplo@dominio.com)')"
+                               oninput="this.setCustomValidity('')">
+                    </div>
+                    <div class="form-group">
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success">Guardar</button>
+                            <a href="{% if source == 'prueba' %}{% url 'gestionPersonasPrueba' %}{% else %}{% url 'gestionPersonas' %}{% endif %}" class="btn btn-danger">Cancelar</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block boton_volver %}{% endblock %}

@@ -13,39 +13,87 @@
     </div>
 
     <!-- Contenedor para cada tabla importada -->
+    {% for tipo, tablas in tablas_por_tipo.items %}
+        {% for tabla in tablas %}
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h3 class="card-title">{{ tabla }}</h3>
+                            <p class="card-text">Visualiza los datos de la tabla {{ tabla }}.</p>
+                            <a href="{% url 'verDatosTabla' tabla %}" class="btn btn-primary">Ver Tabla</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
     <div class="row justify-content-center g-4">
-        <!-- Contenedor para Importar Datos -->
+        <!-- Tarjeta para Personas -->
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-body text-center">
-                    <h3 class="card-title">Importar Datos</h3>
-                    <p class="card-text">Importa nuevos datos al sistema.</p>
-                    <a href="{% url 'importar_personas' %}" class="btn btn-primary">Importar Datos</a>
+                    <h3 class="card-title">Gestión de Personas</h3>
+                    <p class="card-text">Administra la información de personas en el sistema.</p>
+                    <a href="{% url 'home' %}" class="btn btn-primary">Ir a Gestor de Personas</a>
                 </div>
             </div>
         </div>
 
-        <!-- Contenedor para Ver Tablas Importadas -->
+        <!-- Tarjeta para Animales -->
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-body text-center">
-                    <h3 class="card-title">Ver Tablas Importadas</h3>
-                    <p class="card-text">Consulta las tablas importadas en el sistema.</p>
-                    <a href="{% url 'contenedoresTablas' %}" class="btn btn-primary">Ver Tablas</a>
+                    <h3 class="card-title">Gestión de Animales</h3>
+                    <p class="card-text">Administra el registro de animales.</p>
+                    <a href="{% url 'animales' %}" class="btn btn-primary">Ir a Gestor de Animales</a>
                 </div>
             </div>
         </div>
 
-        <!-- Nuevo Contenedor para Backups -->
+        <!-- Tarjeta para Videojuegos -->
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-body text-center">
-                    <h3 class="card-title">Ver Backups</h3>
-                    <p class="card-text">Consulta las copias de seguridad de las tablas.</p>
-                    <a href="{% url 'ver_backups' %}" class="btn btn-primary">Ver Backups</a>
+                    <h3 class="card-title">Gestión de Videojuegos</h3>
+                    <p class="card-text">Administra el inventario de videojuegos.</p>
+                    <a href="{% url 'videojuegos' %}" class="btn btn-primary">Ir a Gestor de Videojuegos</a>
                 </div>
             </div>
         </div>
-    </div>
+
+        <!-- Nueva Tarjeta para Importar Datos -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h3 class="card-title">Importacion de Datos</h3>
+                    <p class="card-text">Importa y visualiza datos desde archivos.</p>
+                    <a href="{% url 'importar_personas' %}" class="btn btn-primary">Ir a Importar Datos</a>
+                </div>
+            </div>
+        </div>
+
+       <div class="col-md-4">
+          <div class="card h-100">
+              <div class="card-body text-center">
+                 <h3 class="card-title">Prueba de Gestion de Personas y Animales</h3>
+                 <p class="card-text">Accede a la prueba de gestión de personas y animales con buscador cruzado.</p>
+                 <a href="{% url 'gestionPersonasPrueba' %}" class="btn btn-primary">Ir a Prueba</a>
+              </div>
+          </div>
+        </div>
+
+        <!-- Nueva funcionalidad para listar contenedores de tablas -->
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h3 class="card-title">Contenedores de Tablas</h3>
+                    <p class="card-text">Ver contenedores de tablas importadas.</p>
+                    <a href="{% url 'contenedoresTablas' %}" class="btn btn-primary">Ir a Contenedores</a>
+                </div>
+            </div>
+        </div>
+     </div>
 </div>
 {% endblock %} 
