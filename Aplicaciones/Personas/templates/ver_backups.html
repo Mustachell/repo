@@ -19,9 +19,16 @@
     {% if backups %}
     <div class="list-group">
         {% for backup in backups %}
-        <a href="{% url 'ver_datos_backup' backup %}" class="list-group-item list-group-item-action">
-            {{ backup }}
-        </a>
+        <div class="d-flex justify-content-between align-items-center list-group-item">
+            <a href="{% url 'ver_datos_backup' backup %}" class="text-decoration-none flex-grow-1">
+                {{ backup }}
+            </a>
+            <div>
+                <button id="downloadBackupButton" class="btn btn-primary btn-sm ms-2">
+                    <i class="fas fa-download"></i> Descargar backup
+                </button>
+            </div>
+        </div>
         {% endfor %}
     </div>
     {% else %}
@@ -30,4 +37,13 @@
     </div>
     {% endif %}
 </div>
+
+<script>
+document.querySelectorAll('#downloadBackupButton').forEach(button => {
+    button.addEventListener('click', function() {
+        const backupName = this.closest('.list-group-item').querySelector('a').textContent.trim();
+        window.location.href = `/descargar_backup/${backupName}`;
+    });
+});
+</script>
 {% endblock %} 

@@ -820,3 +820,45 @@ def actualizar_orden_tabla(request, tabla_nombre):
         pass
     
     return redirect('verDatosTabla', nombre_tabla=tabla_nombre)
+
+def descargar_backup(request, nombre_backup):
+    try:
+        with connection.cursor() as cursor:
+            # Verificar si el backup existe
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = %s
+                )
+            """, [nombre_backup])
+            
+            if not cursor.fetchone()[0]:
+                messages.error(request, f'El backup "{nombre_backup}" no existe.')
+                return redirect('ver_backups')
+            
+            # Obtener los datos del backup
+            cursor.execute(f'SELECT * FROM "{nombre_backup}"')
+            datos = cursor.fetchall()
+            columnas = [desc[0] for desc in cursor.description]
+            
+            # Crear el contenido CSV
+            output = io.StringIO()
+            writer = csv.writer(output, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            
+            # Escribir encabezados
+            writer.writerow(columnas)
+            
+            # Escribir datos
+            for fila in datos:
+                writer.writerow([str(valor) if valor is not None else '' for valor in fila])
+            
+            # Crear la respuesta HTTP
+            response = HttpResponse(output.getvalue(), content_type='text/csv')
+            response['Content-Disposition'] = f'attachment; filename="{nombre_backup}.csv"'
+            
+            return response
+            
+    except Exception as e:
+        messages.error(request, f'Error al descargar el backup: {str(e)}')
+        return redirect('ver_backups')

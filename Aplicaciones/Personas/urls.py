@@ -21,6 +21,7 @@ urlpatterns = [
     path('backup/<str:nombre_backup>/', views.ver_datos_backup, name='ver_datos_backup'),
 
     path('actualizar-orden/<str:tabla_nombre>/', views.actualizar_orden_tabla, name='actualizar_orden_tabla'),
+    path('descargar_backup/<str:nombre_backup>/', views.descargar_backup, name='descargar_backup'),
 ]
 
     
