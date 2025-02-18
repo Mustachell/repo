@@ -808,17 +808,41 @@ def redirect_with_success(request, success_message):
 def actualizar_orden_tabla(request, tabla_nombre):
     try:
         with connection.cursor() as cursor:
-            cursor.execute(f"""
-                CREATE TABLE temp_table AS
-                SELECT * FROM "{tabla_nombre}"
-                ORDER BY CAST(id AS INTEGER);
-                
-                DROP TABLE "{tabla_nombre}";
-                ALTER TABLE temp_table RENAME TO "{tabla_nombre}";
-            """)
+            # Primero obtener el nombre de la primera columna
+            cursor.execute("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_schema = 'public' 
+                AND table_name = %s 
+                ORDER BY ordinal_position 
+                LIMIT 1
+            """, [tabla_nombre])
+            
+            primera_columna = cursor.fetchone()
+            
+            if not primera_columna:
+                messages.error(request, 'No se pudo obtener la estructura de la tabla.')
+                return redirect('verDatosTabla', nombre_tabla=tabla_nombre)
+            
+            nombre_columna = primera_columna[0]
+            
+            # Verificar si la columna contiene 'id' (case insensitive)
+            if 'id' in nombre_columna.lower():
+                cursor.execute(f"""
+                    CREATE TABLE temp_table AS
+                    SELECT * FROM "{tabla_nombre}"
+                    ORDER BY CAST(REGEXP_REPLACE("{nombre_columna}", '[^0-9]', '', 'g') AS INTEGER);
+                    
+                    DROP TABLE "{tabla_nombre}";
+                    ALTER TABLE temp_table RENAME TO "{tabla_nombre}";
+                """)
+                messages.success(request, f'Tabla {tabla_nombre} ordenada exitosamente por {nombre_columna}.')
+            else:
+                messages.warning(request, f'La primera columna ({nombre_columna}) no contiene "ID". No se puede ordenar.')
     except Exception as e:
-        pass
+        messages.error(request, f'Error al ordenar la tabla: {str(e)}')
     
+    # Siempre redirigir a verDatosTabla para mostrar los mensajes allí
     return redirect('verDatosTabla', nombre_tabla=tabla_nombre)
 
 def descargar_backup(request, nombre_backup):
