@@ -1,3 +1,7 @@
+Requirimiento para uso de la app:
+
+Instalar Docker-Desktop:https://www.docker.com/products/docker-desktop/
+
 Inicialmente, si se descarga en ZIP y se extrae el archivo, fallara al usar el comando "Docker-compose up --build" ya que se "crea" otro "repo-master" dentro del original, por lo que lo necesario para correr la aplicacion en la terminal es usar el comando "cd". EJEMPLO: "cd C: \ Usuarios \ "nombre_usuario" \ "Descargas"\repo-master\repo-master", una vez hecho eso, usar el comando "docker-compose up --build".
 
 En caso de no guardar el archivo en "Descargas", reemplaze con el lugar guardado elegido por usted.
