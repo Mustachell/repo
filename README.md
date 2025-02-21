@@ -6,6 +6,8 @@ Inicialmente, si se descarga en ZIP y se extrae el archivo, fallara al usar el c
 
 En caso de no guardar el archivo en "Descargas", reemplaze con el lugar guardado elegido por usted.
 
+Para acceder a la app desde el navegador, use "localhost:8000" despues de iniciar el proyecto.
+
 Ahora el caso ideal de uso de la aplicacion de Gestor ly:
 
 1. Entrar en "Importar Datos"
